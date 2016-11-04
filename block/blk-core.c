@@ -1815,12 +1815,14 @@ get_rq:
 		 * If this is the first request added after a plug, fire
 		 * of a plug trace.
 		 */
-		if (!request_count)
-			trace_block_plug(q);
-		else {
-			if (request_count >= BLK_MAX_REQUEST_COUNT) {
+		if (!request_count) {
+//			trace_block_plug(q);
+		} else {
+			struct request *last = list_entry_rq(plug->list.prev);
+			if (request_count >= BLK_MAX_REQUEST_COUNT ||
+			    blk_rq_bytes(last) >= BLK_PLUG_FLUSH_SIZE) {
 				blk_flush_plug_list(plug, false);
-				trace_block_plug(q);
+//				trace_block_plug(q);
 			}
 		}
 		list_add_tail(&req->queuelist, &plug->list);
