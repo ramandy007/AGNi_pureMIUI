@@ -5255,6 +5255,7 @@ static int __handle_overlay_prepare(struct msm_fb_data_type *mfd,
 		if (!sorted_ovs) {
 			mutex_unlock(&mdp5_data->ov_lock);
 			pr_err("error allocating ovlist mem\n");
+			mutex_unlock(&mdp5_data->ov_lock);
 			return -ENOMEM;
 		}
 		memcpy(sorted_ovs, ip_ovs, num_ovs * sizeof(*ip_ovs));
