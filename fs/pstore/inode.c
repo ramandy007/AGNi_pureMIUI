@@ -41,6 +41,7 @@
 #ifdef CONFIG_PSTORE_LAST_KMSG
 #include <linux/proc_fs.h>
 #endif
+#include <linux/vmalloc.h>
 
 #include "internal.h"
 
