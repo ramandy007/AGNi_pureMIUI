@@ -2081,14 +2081,11 @@ static u32  top_task_load(struct rq *rq)
 	}
 }
 
-static int load_to_index(u32 load)
+static u32 load_to_index(u32 load)
 {
-	if (load < sched_load_granule)
-		return 0;
-	else if (load >= sched_ravg_window)
-		return NUM_LOAD_INDICES - 1;
-	else
-		return load / sched_load_granule;
+	u32 index = load / sched_load_granule;
+
+	return min(index, (u32)(NUM_LOAD_INDICES - 1));
 }
 
 static void update_top_tasks(struct task_struct *p, struct rq *rq,
@@ -2612,7 +2609,8 @@ update_task_rq_cpu_cycles(struct task_struct *p, struct rq *rq, int event,
 
 	p->cpu_cycles = cur_cycles;
 
-	trace_sched_get_task_cpu_cycles(cpu, event, rq->cc.cycles, rq->cc.time);
+	trace_sched_get_task_cpu_cycles(cpu, event, rq->cc.cycles,
+					rq->cc.time, p);
 }
 
 static int
