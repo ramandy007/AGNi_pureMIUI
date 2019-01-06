@@ -199,7 +199,7 @@
 		25 1f 09 0a 06 03 04 a0
 		25 1f 09 0a 06 03 04 a0
 		25 1e 08 0a 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -209,7 +209,7 @@
 		25 1f 09 0a 06 03 04 a0
 		25 1f 09 0a 06 03 04 a0
 		25 1e 08 0a 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -219,7 +219,7 @@
 		25 1f 09 0a 06 03 04 a0
 		25 1f 09 0a 06 03 04 a0
 		25 1e 08 0a 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -229,7 +229,7 @@
 		25 1f 09 0a 06 03 04 a0
 		25 1f 09 0a 06 03 04 a0
 		25 1f 08 0a 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -239,7 +239,7 @@
 		25 1f 09 0a 06 03 04 a0
 		25 1f 09 0a 06 03 04 a0
 		25 1e 08 0a 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -249,7 +249,7 @@
                26 21 09 0b 06 03 04 a0
                26 21 09 0b 06 03 04 a0
                26 20 0a 0b 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
         qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -259,7 +259,7 @@
                26 21 09 0b 06 03 04 a0
                26 21 09 0b 06 03 04 a0
                26 20 0a 0b 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
         qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -269,7 +269,7 @@
                26 21 09 0b 06 03 04 a0
                26 21 09 0b 06 03 04 a0
                26 20 0a 0b 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
         qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -279,7 +279,7 @@
                26 21 09 0b 06 03 04 a0
                26 21 09 0b 06 03 04 a0
                26 20 0a 0b 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
         qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -289,7 +289,7 @@
                26 21 09 0b 06 03 04 a0
                26 21 09 0b 06 03 04 a0
                26 20 0a 0b 06 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
         qcom,mdss-dsi-max-refresh-rate = <60>;
 
 };
@@ -300,7 +300,7 @@
                 26 21 09 0b 06 03 04 a0
                 26 21 09 0b 06 03 04 a0
                 26 20 0a 0b 06 03 04 a0];
-        qcom,mdss-dsi-min-refresh-rate = <48>;
+        qcom,mdss-dsi-min-refresh-rate = <24>;
         qcom,mdss-dsi-max-refresh-rate = <60>;
 };
 
@@ -380,7 +380,7 @@
 		24 1e 08 09 05 03 04 a0
 		24 1e 08 09 05 03 04 a0
 		24 1a 08 09 05 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 	qcom,mdss-dsi-pan-enable-dynamic-fps;
 	qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
@@ -416,7 +416,7 @@
 		23 1e 08 09 05 03 04 a0
 		23 1e 08 09 05 03 04 a0
 		23 1a 08 09 05 03 04 a0];
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 	qcom,mdss-dsi-pan-enable-dynamic-fps;
 	qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
@@ -483,7 +483,7 @@
 	qcom,mdss-dsi-panel-on-check-value = <0x9d 0x9d 0x9d 0x9d>;
 	qcom,mdss-dsi-panel-status-read-length = <4>;
 	qcom,mdss-dsi-panel-max-error-count = <3>;
-	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-min-refresh-rate = <24>;
 	qcom,mdss-dsi-max-refresh-rate = <60>;
 	qcom,mdss-dsi-pan-enable-dynamic-fps;
 	qcom,mdss-dsi-pan-fps-update =
