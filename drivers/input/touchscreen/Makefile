@@ -107,12 +107,14 @@ obj-$(CONFIG_KERNEL_CUSTOM_D2S)	+= lct_tp_fm_info.o
 obj-$(CONFIG_KERNEL_CUSTOM_D2S)	+= lct_ctp_selftest.o
 obj-$(CONFIG_KERNEL_CUSTOM_D2S)	+= lct_ctp_upgrade.o
 obj-$(CONFIG_KERNEL_CUSTOM_D2S)	+= lct_if_ctp_upgrade.o
+obj-$(CONFIG_KERNEL_CUSTOM_D2S)	+= lct_tp_gesture.o
 
 # HMI_L6662_A01
 obj-$(CONFIG_KERNEL_CUSTOM_E7T)	+= lct_tp_fm_info.o
 obj-$(CONFIG_KERNEL_CUSTOM_E7T)	+= lct_ctp_selftest.o
 obj-$(CONFIG_KERNEL_CUSTOM_E7T)	+= lct_ctp_upgrade.o
 obj-$(CONFIG_KERNEL_CUSTOM_E7T)	+= lct_if_ctp_upgrade.o
+obj-$(CONFIG_KERNEL_CUSTOM_E7T)	+= lct_tp_gesture.o
 
 # HMI_L6653_A01
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX_E7S)	+= synaptics_dsx_e7s/
