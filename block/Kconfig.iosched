@@ -123,6 +123,9 @@ config IOSCHED_ANXIETY
 	  READ requests are given priority over WRITE requests due to their
 	  essentiality in determining load-time latency.
 
+config IOSCHED_DEPRESSION
+	tristate "DEPRESSION I/O scheduler"
+	default y
 
 choice
 	prompt "Default I/O scheduler"
@@ -168,12 +171,15 @@ choice
 	config DEFAULT_ANXIETY
 		bool "ANXIETY" if IOSCHED_ANXIETY=y
 
+	config DEFAULT_DEPRESSION
+		bool "Depression" if IOSCHED_DEPRESSION=y
 endchoice
 
 config DEFAULT_IOSCHED
 	string
 	default "deadline" if DEFAULT_DEADLINE
 	default "tripndroid" if DEFAULT_TRIPNDROID
+	default "depression" if DEFAULT_DEPRESSION
 	default "cfq" if DEFAULT_CFQ
 	default "bfq" if DEFAULT_BFQ
 	default "anxiety" if DEFAULT_ANXIETY
