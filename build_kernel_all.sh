@@ -8,21 +8,21 @@ rm $COUT/.config $COUT/.config.old
 
 echo "-----------------------------------------------------------------------"
 echo " "
-echo "          BATCH MODE: Building AGNi whyred MIUI-O variant..."
-./build_kernel_whyred_miuiO.sh || exit 1
+echo "          BATCH MODE: Building AGNi whyred MIUI variant..."
+./build_kernel_whyred_miui.sh || exit 1
 rm $COUT/.config $COUT/.config.old
 echo " "
-echo "          BATCH MODE: Built AGNi whyred MIUI-O variant!!!"
+echo "          BATCH MODE: Built AGNi whyred MIUI variant!!!"
 echo "-----------------------------------------------------------------------"
 echo " "
 
 echo "-----------------------------------------------------------------------"
 echo " "
-echo "          BATCH MODE: Building AGNi whyred MIUI-O f2fs variant..."
-./build_kernel_whyred_miuiO-f2fs.sh || exit 1
+echo "          BATCH MODE: Building AGNi whyred MIUI f2fs variant..."
+./build_kernel_whyred_miui-f2fs.sh || exit 1
 rm $COUT/.config $COUT/.config.old
 echo " "
-echo "          BATCH MODE: Built AGNi whyred MIUI-O f2fs variant!!!"
+echo "          BATCH MODE: Built AGNi whyred MIUI f2fs variant!!!"
 echo "-----------------------------------------------------------------------"
 echo " "
 
@@ -39,22 +39,11 @@ echo " "
 echo " "
 echo "-----------------------------------------------------------------------"
 echo " "
-echo "          BATCH MODE: Building AGNi MIUI-O tulip variant..."
-./build_kernel_tulip_miuiO.sh || exit 1
+echo "          BATCH MODE: Building AGNi MIUI tulip variant..."
+./build_kernel_tulip_miui.sh || exit 1
 rm $COUT/.config $COUT/.config.old
 echo " "
-echo "          BATCH MODE: Built AGNi MIUI-O tulip variant!!!"
-echo "-----------------------------------------------------------------------"
-echo " "
-
-echo " "
-echo "-----------------------------------------------------------------------"
-echo " "
-echo "          BATCH MODE: Building AGNi MIUI-P tulip variant..."
-./build_kernel_tulip_miuiP.sh || exit 1
-rm $COUT/.config $COUT/.config.old
-echo " "
-echo "          BATCH MODE: Built AGNi MIUI-P tulip variant!!!"
+echo "          BATCH MODE: Built AGNi MIUI tulip variant!!!"
 echo "-----------------------------------------------------------------------"
 echo " "
 
