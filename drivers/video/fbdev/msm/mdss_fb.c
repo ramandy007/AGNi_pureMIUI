@@ -96,12 +96,6 @@
 bool backlight_dimmer = false;
 module_param(backlight_dimmer, bool, 0644);
 
-int backlight_min = 0;
-int backlight_max = MDSS_MAX_BL_BRIGHTNESS;
-module_param(backlight_min, int, 0644);
-module_param(backlight_max, int, 0644);
-
-
 static struct fb_info *fbi_list[MAX_FBI_LIST];
 static int fbi_list_index;
 
@@ -340,20 +334,10 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
 
-	// Boeffla: apply min/max limits for LCD backlight (0 is exception for display off)
-	if (value != 0)
-	{
-		if (value < backlight_min)
-			value = backlight_min;
-
-		if (value > backlight_max)
-			value = backlight_max;
-	}
-
 	if (backlight_dimmer) {
 		MDSS_BRIGHT_TO_BL_DIM(bl_lvl, value);
 	} else {
-		/* This maps android backlight level 0 to 255 or 4095 into
+		/* This maps android backlight level 0 to 255 into
 		   driver backlight level 0 to bl_max with rounding */
 		MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
 					mfd->panel_info->brightness_max);
@@ -2931,7 +2915,7 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 		ret = 0;
 		goto end;
 	}
-	pr_debug("%s: blank_mode: %d\n",__func__, blank_mode);
+	pr_info("%s: blank_mode: %d\n",__func__, blank_mode);
 
 	pdata = dev_get_platdata(&mfd->pdev->dev);
 
@@ -6102,7 +6086,7 @@ int mdss_prim_panel_fb_unblank(int timeout)
 {
 	int ret = 0;
 	struct msm_fb_data_type *mfd = NULL;
-	printk("prim_fbi 00\n");
+        printk("prim_fbi 00\n");
 	if (prim_fbi) {
 		printk("prim_fbi 01\n");
 		mfd = (struct msm_fb_data_type *)prim_fbi->par;
