@@ -14,25 +14,25 @@ export SUBARCH=arm64
 mkdir -p /mnt/ANDROID/COMPILED_OUT
 
 echo ""
-echo " Cross-compiling AGNi pureMIUI kernel whyred..."
+echo " Cross-compiling AGNi pureMIUI pie kernel whyred..."
 echo ""
 
 cd $KERNELDIR/
 
 if [ ! -f /mnt/ANDROID/COMPILED_OUT/.config ];
 then
-    make defconfig O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64 agni_whyred-miui-f2fs_defconfig
+    make defconfig O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64 agni_whyred-miui_defconfig
 fi
 
 make -j3 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
 
-rm -rf $KERNELDIR/BUILT_whyred-miui-f2fs
-mkdir -p $KERNELDIR/BUILT_whyred-miui-f2fs
+rm -rf $KERNELDIR/BUILT_whyred-miui_pie
+mkdir -p $KERNELDIR/BUILT_whyred-miui_pie
 
 #find -name '*.ko' -exec mv -v {} $KERNELDIR/BUILT_whyred-miui/system/lib/modules \;
 
-mv /mnt/ANDROID/COMPILED_OUT/arch/arm64/boot/Image.*-dtb $KERNELDIR/BUILT_whyred-miui-f2fs/
+mv /mnt/ANDROID/COMPILED_OUT/arch/arm64/boot/Image.*-dtb $KERNELDIR/BUILT_whyred-miui_pie/
 
 echo ""
-echo "AGNi pureMIUI has been built for whyred !!!"
+echo "AGNi pureMIUI pie has been built for whyred !!!"
 

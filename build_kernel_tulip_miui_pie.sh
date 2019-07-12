@@ -14,7 +14,7 @@ export SUBARCH=arm64
 mkdir -p /mnt/ANDROID/COMPILED_OUT
 
 echo ""
-echo " Cross-compiling AGNi pureMIUI kernel tulip..."
+echo " Cross-compiling AGNi pureMIUI pie kernel tulip..."
 echo ""
 
 cd $KERNELDIR/
@@ -26,13 +26,13 @@ fi
 
 make -j3 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
 
-rm -rf $KERNELDIR/BUILT_tulip-miui
-mkdir -p $KERNELDIR/BUILT_tulip-miui
+rm -rf $KERNELDIR/BUILT_tulip-miui_pie
+mkdir -p $KERNELDIR/BUILT_tulip-miui_pie
 
 #find -name '*.ko' -exec mv -v {} $KERNELDIR/BUILT_tulip-miui/system/lib/modules \;
 
-mv /mnt/ANDROID/COMPILED_OUT/arch/arm64/boot/Image.*-dtb $KERNELDIR/BUILT_tulip-miui/
+mv /mnt/ANDROID/COMPILED_OUT/arch/arm64/boot/Image.*-dtb $KERNELDIR/BUILT_tulip-miui_pie/
 
 echo ""
-echo "AGNi pureMIUI has been built for tulip !!!"
+echo "AGNi pureMIUI pie has been built for tulip !!!"
 
