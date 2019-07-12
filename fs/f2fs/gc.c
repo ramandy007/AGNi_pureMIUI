@@ -13,9 +13,6 @@
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/freezer.h>
-#include <linux/fb.h>
-#include <linux/power_supply.h>
-#include <linux/wakelock.h>
 
 #include "f2fs.h"
 #include "node.h"
@@ -23,34 +20,14 @@
 #include "gc.h"
 #include <trace/events/f2fs.h>
 
-#define TRIGGER_SOFF (!screen_on && power_supply_is_system_supplied())
-static bool screen_on = true;
-// Use 1 instead of 0 to allow thread interrupts
-#define SOFF_WAIT_MS 1
-
-static inline void gc_set_wakelock(struct f2fs_sb_info *sbi,
-		struct f2fs_gc_kthread *gc_th, bool val)
-{
-	if (val) {
-		if (!wake_lock_active(&gc_th->gc_wakelock)) {
-			f2fs_msg(sbi->sb, KERN_INFO, "Catching wakelock for GC");
-			wake_lock(&gc_th->gc_wakelock);
-		}
-	} else {
-		if (wake_lock_active(&gc_th->gc_wakelock)) {
-			f2fs_msg(sbi->sb, KERN_INFO, "Unlocking wakelock for GC");
-			wake_unlock(&gc_th->gc_wakelock);
-		}
-	}
-}
-
 static int gc_thread_func(void *data)
 {
 	struct f2fs_sb_info *sbi = data;
 	struct f2fs_gc_kthread *gc_th = sbi->gc_thread;
 	wait_queue_head_t *wq = &sbi->gc_thread->gc_wait_queue_head;
-	unsigned int wait_ms = gc_th->min_sleep_time;
-	bool force_gc;
+	unsigned int wait_ms;
+
+	wait_ms = gc_th->min_sleep_time;
 
 	set_freezable();
 	do {
@@ -58,17 +35,6 @@ static int gc_thread_func(void *data)
 				kthread_should_stop() || freezing(current) ||
 				gc_th->gc_wake,
 				msecs_to_jiffies(wait_ms));
-
-		force_gc = TRIGGER_SOFF;
-		if (force_gc) {
-			gc_set_wakelock(sbi, gc_th, true);
-			wait_ms = SOFF_WAIT_MS;
-			sbi->gc_mode = GC_URGENT;
-		} else {
-			gc_set_wakelock(sbi, gc_th, false);
-			wait_ms = gc_th->min_sleep_time;
-			sbi->gc_mode = GC_NORMAL;
-		}
 
 		/* give it a try one time */
 		if (gc_th->gc_wake)
@@ -82,10 +48,8 @@ static int gc_thread_func(void *data)
 			break;
 
 		if (sbi->sb->s_writers.frozen >= SB_FREEZE_WRITE) {
-			if (!force_gc) {
-				increase_sleep_time(gc_th, &wait_ms);
-				stat_other_skip_bggc_count(sbi);
-			}
+			increase_sleep_time(gc_th, &wait_ms);
+			stat_other_skip_bggc_count(sbi);
 			continue;
 		}
 
@@ -112,9 +76,8 @@ static int gc_thread_func(void *data)
 		 * invalidated soon after by user update or deletion.
 		 * So, I'd like to wait some time to collect dirty segments.
 		 */
-		if (sbi->gc_mode == GC_URGENT || force_gc) {
-			if (!force_gc)
-				wait_ms = gc_th->urgent_sleep_time;
+		if (sbi->gc_mode == GC_URGENT) {
+			wait_ms = gc_th->urgent_sleep_time;
 			mutex_lock(&sbi->gc_mutex);
 			goto do_gc;
 		}
@@ -139,14 +102,8 @@ do_gc:
 		stat_inc_bggc_count(sbi);
 
 		/* if return value is not zero, no victim was selected */
-		if (f2fs_gc(sbi, force_gc || test_opt(sbi, FORCE_FG_GC), true, NULL_SEGNO)) {
+		if (f2fs_gc(sbi, test_opt(sbi, FORCE_FG_GC), true, NULL_SEGNO))
 			wait_ms = gc_th->no_gc_sleep_time;
-			gc_set_wakelock(sbi, gc_th, false);
-			sbi->gc_mode = GC_NORMAL;
-			f2fs_msg(sbi->sb, KERN_INFO,
-				"No more GC victim found, "
-				"sleeping for %u ms", wait_ms);
-		}
 
 		trace_f2fs_background_gc(sbi->sb, wait_ms,
 				prefree_segments(sbi), free_segments(sbi));
@@ -165,10 +122,6 @@ int f2fs_start_gc_thread(struct f2fs_sb_info *sbi)
 	struct f2fs_gc_kthread *gc_th;
 	dev_t dev = sbi->sb->s_bdev->bd_dev;
 	int err = 0;
-	char buf[25];
-
-	if (sbi->gc_thread != NULL)
-		goto out;
 
 	gc_th = f2fs_kmalloc(sbi, sizeof(struct f2fs_gc_kthread), GFP_KERNEL);
 	if (!gc_th) {
@@ -181,23 +134,17 @@ int f2fs_start_gc_thread(struct f2fs_sb_info *sbi)
 	gc_th->max_sleep_time = DEF_GC_THREAD_MAX_SLEEP_TIME;
 	gc_th->no_gc_sleep_time = DEF_GC_THREAD_NOGC_SLEEP_TIME;
 
-	sbi->gc_mode = GC_NORMAL;
 	gc_th->gc_wake= 0;
-
-	snprintf(buf, sizeof(buf), "f2fs_gc-%u:%u", MAJOR(dev), MINOR(dev));
-
-	wake_lock_init(&gc_th->gc_wakelock, WAKE_LOCK_SUSPEND, buf);
 
 	sbi->gc_thread = gc_th;
 	init_waitqueue_head(&sbi->gc_thread->gc_wait_queue_head);
-	sbi->gc_thread->f2fs_gc_task = kthread_run(gc_thread_func, sbi, buf);
+	sbi->gc_thread->f2fs_gc_task = kthread_run(gc_thread_func, sbi,
+			"f2fs_gc-%u:%u", MAJOR(dev), MINOR(dev));
 	if (IS_ERR(gc_th->f2fs_gc_task)) {
 		err = PTR_ERR(gc_th->f2fs_gc_task);
 		kvfree(gc_th);
 		sbi->gc_thread = NULL;
 	}
-	set_task_ioprio(sbi->gc_thread->f2fs_gc_task,
-			IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0));
 out:
 	return err;
 }
@@ -208,124 +155,9 @@ void f2fs_stop_gc_thread(struct f2fs_sb_info *sbi)
 	if (!gc_th)
 		return;
 	kthread_stop(gc_th->f2fs_gc_task);
-	wake_lock_destroy(&gc_th->gc_wakelock);
 	kvfree(gc_th);
-	sbi->gc_mode = GC_NORMAL;
 	sbi->gc_thread = NULL;
 }
-
-static LIST_HEAD(f2fs_sbi_list);
-static DEFINE_MUTEX(f2fs_sbi_mutex);
-/* Trigger rapid GC when invalid block is higher than 3% */
-#define RAPID_GC_LIMIT_INVALID_BLOCK 3
-
-void f2fs_start_all_gc_threads(void)
-{
-	struct f2fs_sb_info *sbi;
-	block_t invalid_blocks;
-
-	mutex_lock(&f2fs_sbi_mutex);
-	list_for_each_entry(sbi, &f2fs_sbi_list, list) {
-		invalid_blocks = sbi->user_block_count -
-					written_block_count(sbi) -
-					free_user_blocks(sbi);
-		if (invalid_blocks >
-		    ((long)((sbi->user_block_count - written_block_count(sbi)) *
-			RAPID_GC_LIMIT_INVALID_BLOCK) / 100)) {
-			f2fs_start_gc_thread(sbi);
-			sbi->gc_thread->gc_wake = 1;
-			wake_up_interruptible_all(&sbi->gc_thread->gc_wait_queue_head);
-			wake_up_discard_thread(sbi, true);
-		} else {
-			f2fs_msg(sbi->sb, KERN_INFO,
-					"Invalid blocks lower than %d%%,"
-					"skipping rapid GC (%u / (%u - %u))",
-					RAPID_GC_LIMIT_INVALID_BLOCK,
-					invalid_blocks,
-					sbi->user_block_count,
-					written_block_count(sbi));
-		}
-	}
-	mutex_unlock(&f2fs_sbi_mutex);
-}
-
-void f2fs_stop_all_gc_threads(void)
-{
-	struct f2fs_sb_info *sbi;
-
-	mutex_lock(&f2fs_sbi_mutex);
-	list_for_each_entry(sbi, &f2fs_sbi_list, list) {
-		f2fs_stop_gc_thread(sbi);
-	}
-	mutex_unlock(&f2fs_sbi_mutex);
-}
-
-void f2fs_sbi_list_add(struct f2fs_sb_info *sbi)
-{
-	mutex_lock(&f2fs_sbi_mutex);
-	list_add_tail(&sbi->list, &f2fs_sbi_list);
-	mutex_unlock(&f2fs_sbi_mutex);
-}
-
-void f2fs_sbi_list_del(struct f2fs_sb_info *sbi)
-{
-	mutex_lock(&f2fs_sbi_mutex);
-	list_del(&sbi->list);
-	mutex_unlock(&f2fs_sbi_mutex);
-}
-
-static struct work_struct f2fs_gc_fb_worker;
-static void f2fs_gc_fb_work(struct work_struct *work)
-{
-	if (screen_on) {
-		f2fs_stop_all_gc_threads();
-	} else {
-		/*
-		 * Start all GC threads exclusively from here
-		 * since the phone screen would turn on when
-		 * a charger is connected
-		 */
-		if (TRIGGER_SOFF)
-			f2fs_start_all_gc_threads();
-	}
-}
-
-static int fb_notifier_callback(struct notifier_block *self,
-				unsigned long event, void *data)
-{
-	struct fb_event *evdata = data;
-	int *blank;
-
-	if ((event == FB_EVENT_BLANK) && evdata && evdata->data) {
-		blank = evdata->data;
-
-		switch (*blank) {
-		case FB_BLANK_POWERDOWN:
-			screen_on = false;
-			queue_work(system_power_efficient_wq, &f2fs_gc_fb_worker);
-			break;
-		case FB_BLANK_UNBLANK:
-			screen_on = true;
-			queue_work(system_power_efficient_wq, &f2fs_gc_fb_worker);
-			break;
-		}
-	}
-
-	return 0;
-}
-
-static struct notifier_block fb_notifier_block = {
-	.notifier_call = fb_notifier_callback,
-};
-
-static int __init f2fs_gc_register_fb(void)
-{
-	INIT_WORK(&f2fs_gc_fb_worker, f2fs_gc_fb_work);
-	fb_register_client(&fb_notifier_block);
-
-	return 0;
-}
-late_initcall(f2fs_gc_register_fb);
 
 static int select_gc_type(struct f2fs_sb_info *sbi, int gc_type)
 {
@@ -590,10 +422,10 @@ got_result:
 
 	}
 out:
-//	if (p.min_segno != NULL_SEGNO)
-//		trace_f2fs_get_victim(sbi->sb, type, gc_type, &p,
-//				sbi->cur_victim_sec,
-//				prefree_segments(sbi), free_segments(sbi));
+	if (p.min_segno != NULL_SEGNO)
+		trace_f2fs_get_victim(sbi->sb, type, gc_type, &p,
+				sbi->cur_victim_sec,
+				prefree_segments(sbi), free_segments(sbi));
 	mutex_unlock(&dirty_i->seglist_lock);
 
 	return (p.min_segno == NULL_SEGNO) ? 0 : 1;
@@ -759,7 +591,7 @@ block_t f2fs_start_bidx_of_node(unsigned int node_ofs, struct inode *inode)
 		int dec = (node_ofs - indirect_blks - 3) / (NIDS_PER_BLOCK + 1);
 		bidx = node_ofs - 5 - dec;
 	}
-	return bidx * ADDRS_PER_BLOCK + ADDRS_PER_INODE(inode);
+	return bidx * ADDRS_PER_BLOCK(inode) + ADDRS_PER_INODE(inode);
 }
 
 static bool is_alive(struct f2fs_sb_info *sbi, struct f2fs_summary *sum,
@@ -824,6 +656,11 @@ static int ra_data_block(struct inode *inode, pgoff_t index)
 
 	if (f2fs_lookup_extent_cache(inode, index, &ei)) {
 		dn.data_blkaddr = ei.blk + index - ei.fofs;
+		if (unlikely(!f2fs_is_valid_blkaddr(sbi, dn.data_blkaddr,
+						DATA_GENERIC_ENHANCE_READ))) {
+			err = -EFAULT;
+			goto put_page;
+		}
 		goto got_it;
 	}
 
@@ -833,8 +670,12 @@ static int ra_data_block(struct inode *inode, pgoff_t index)
 		goto put_page;
 	f2fs_put_dnode(&dn);
 
+	if (!__is_valid_data_blkaddr(dn.data_blkaddr)) {
+		err = -ENOENT;
+		goto put_page;
+	}
 	if (unlikely(!f2fs_is_valid_blkaddr(sbi, dn.data_blkaddr,
-						DATA_GENERIC))) {
+						DATA_GENERIC_ENHANCE))) {
 		err = -EFAULT;
 		goto put_page;
 	}
@@ -1343,6 +1184,7 @@ static int do_garbage_collect(struct f2fs_sb_info *sbi,
 				"type [%d, %d] in SSA and SIT",
 				segno, type, GET_SUM_TYPE((&sum->footer)));
 			set_sbi_flag(sbi, SBI_NEED_FSCK);
+			f2fs_stop_checkpoint(sbi, false);
 			goto skip;
 		}
 
@@ -1401,14 +1243,14 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync,
 	unsigned long long first_skipped;
 	unsigned int skipped_round = 0, round = 0;
 
-/*	trace_f2fs_gc_begin(sbi->sb, sync, background,
+	trace_f2fs_gc_begin(sbi->sb, sync, background,
 				get_pages(sbi, F2FS_DIRTY_NODES),
 				get_pages(sbi, F2FS_DIRTY_DENTS),
 				get_pages(sbi, F2FS_DIRTY_IMETA),
 				free_sections(sbi),
 				free_segments(sbi),
 				reserved_segments(sbi),
-				prefree_segments(sbi)); */
+				prefree_segments(sbi));
 
 	cpc.reason = __get_cp_reason(sbi);
 	sbi->skipped_gc_rwsem = 0;
@@ -1489,14 +1331,14 @@ stop:
 	SIT_I(sbi)->last_victim[ALLOC_NEXT] = 0;
 	SIT_I(sbi)->last_victim[FLUSH_DEVICE] = init_segno;
 
-/*	trace_f2fs_gc_end(sbi->sb, ret, total_freed, sec_freed,
+	trace_f2fs_gc_end(sbi->sb, ret, total_freed, sec_freed,
 				get_pages(sbi, F2FS_DIRTY_NODES),
 				get_pages(sbi, F2FS_DIRTY_DENTS),
 				get_pages(sbi, F2FS_DIRTY_IMETA),
 				free_sections(sbi),
 				free_segments(sbi),
 				reserved_segments(sbi),
-				prefree_segments(sbi)); */
+				prefree_segments(sbi));
 
 	mutex_unlock(&sbi->gc_mutex);
 
@@ -1514,7 +1356,7 @@ void f2fs_build_gc_manager(struct f2fs_sb_info *sbi)
 	sbi->gc_pin_file_threshold = DEF_GC_FAILED_PINNED_FILES;
 
 	/* give warm/cold data area from slower device */
-	if (sbi->s_ndevs && !__is_large_section(sbi))
+	if (f2fs_is_multi_device(sbi) && !__is_large_section(sbi))
 		SIT_I(sbi)->last_victim[ALLOC_NEXT] =
 				GET_SEGNO(sbi, FDEV(0).end_blk) + 1;
 }
