@@ -2925,7 +2925,7 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 		ret = 0;
 		goto end;
 	}
-	pr_debug("%s: blank_mode: %d\n",__func__, blank_mode);
+	pr_info("%s: blank_mode: %d\n",__func__, blank_mode);
 
 	pdata = dev_get_platdata(&mfd->pdev->dev);
 
@@ -6101,7 +6101,7 @@ int mdss_prim_panel_fb_unblank(int timeout)
 {
 	int ret = 0;
 	struct msm_fb_data_type *mfd = NULL;
-	printk("prim_fbi 00\n");
+        printk("prim_fbi 00\n");
 	if (prim_fbi) {
 		printk("prim_fbi 01\n");
 		mfd = (struct msm_fb_data_type *)prim_fbi->par;
