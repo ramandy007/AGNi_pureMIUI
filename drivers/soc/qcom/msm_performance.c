@@ -404,11 +404,11 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 	cpumask_var_t limit_mask;
 	int ret;
 
-//	while ((cp = strpbrk(cp + 1, " :")))
-//		ntokens++;
+	while ((cp = strpbrk(cp + 1, " :")))
+		ntokens++;
 
 	/* CPU:value pair */
-/*	if (!(ntokens % 2))
+	if (!(ntokens % 2))
 		return -EINVAL;
 
 	cp = buf;
@@ -427,7 +427,7 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 		cp = strnchr(cp, strlen(cp), ' ');
 		cp++;
 	}
-*/
+
 	/*
 	 * Since on synchronous systems policy is shared amongst multiple
 	 * CPUs only one CPU needs to be updated for the limit to be
@@ -435,7 +435,7 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 	 * of other CPUs in the cluster once it is done for at least one CPU
 	 * in the cluster
 	 */
-/*	get_online_cpus();
+	get_online_cpus();
 	for_each_cpu(i, limit_mask) {
 		i_cpu_stats = &per_cpu(cpu_stats, i);
 
@@ -451,7 +451,7 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 			cpumask_clear_cpu(j, limit_mask);
 	}
 	put_online_cpus();
-*/
+
 	return 0;
 }
 
