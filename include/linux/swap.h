@@ -368,6 +368,10 @@ static inline int mem_cgroup_swappiness(struct mem_cgroup *memcg)
 {
 	/* root ? */
 	if (mem_cgroup_disabled() || !memcg->css.parent)
+		if (vm_swappiness > 60) {
+			vm_swappiness = 60;
+		}
+
 		return vm_swappiness;
 
 	return memcg->swappiness;
@@ -376,6 +380,9 @@ static inline int mem_cgroup_swappiness(struct mem_cgroup *memcg)
 #else
 static inline int mem_cgroup_swappiness(struct mem_cgroup *mem)
 {
+	if (vm_swappiness > 60) {
+		vm_swappiness = 60;
+	}
 	return vm_swappiness;
 }
 #endif
