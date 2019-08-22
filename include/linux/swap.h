@@ -363,13 +363,15 @@ extern void check_move_unevictable_pages(struct page **, int nr_pages);
 
 extern int kswapd_run(int nid);
 extern void kswapd_stop(int nid);
+extern int agni_swappiness;
+
 #ifdef CONFIG_MEMCG
 static inline int mem_cgroup_swappiness(struct mem_cgroup *memcg)
 {
 	/* root ? */
 	if (mem_cgroup_disabled() || !memcg->css.parent)
-		if (vm_swappiness > 60) {
-			vm_swappiness = 60;
+		if (vm_swappiness > agni_swappiness) {
+			vm_swappiness = agni_swappiness;
 		}
 
 		return vm_swappiness;
@@ -380,8 +382,8 @@ static inline int mem_cgroup_swappiness(struct mem_cgroup *memcg)
 #else
 static inline int mem_cgroup_swappiness(struct mem_cgroup *mem)
 {
-	if (vm_swappiness > 60) {
-		vm_swappiness = 60;
+	if (vm_swappiness > agni_swappiness) {
+		vm_swappiness = agni_swappiness;
 	}
 	return vm_swappiness;
 }
