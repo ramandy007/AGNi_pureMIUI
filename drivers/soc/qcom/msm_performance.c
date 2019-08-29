@@ -487,11 +487,11 @@ static int set_cpu_max_freq(const char *buf, const struct kernel_param *kp)
 	cpumask_var_t limit_mask;
 	int ret;
 
-//	while ((cp = strpbrk(cp + 1, " :")))
-//		ntokens++;
+	while ((cp = strpbrk(cp + 1, " :")))
+		ntokens++;
 
 	/* CPU:value pair */
-/*	if (!(ntokens % 2))
+	if (!(ntokens % 2))
 		return -EINVAL;
 
 	cp = buf;
@@ -526,7 +526,7 @@ static int set_cpu_max_freq(const char *buf, const struct kernel_param *kp)
 			cpumask_clear_cpu(j, limit_mask);
 	}
 	put_online_cpus();
-*/
+
 	return 0;
 }
 
