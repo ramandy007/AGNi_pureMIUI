@@ -179,7 +179,7 @@
 		qcom,mdss-dsi-tx-eot-append;
 		qcom,mdss-dsi-post-init-delay = <1>;
 
-		qcom,esd-check-enabled;
+		/*qcom,esd-check-enabled;*/
 		qcom,mdss-dsi-panel-hdr-enabled;
 		qcom,mdss-dsi-panel-hdr-color-primaries = <14880 15935 32435
 			16555 14945 30910 7790 3415>;
