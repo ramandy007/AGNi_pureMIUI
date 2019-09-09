@@ -24,7 +24,7 @@ then
     make defconfig O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64 agni_whyred-pie_defconfig
 fi
 
-make -j3 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
+make -j8 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
 
 rm -rf $KERNELDIR/BUILT_whyred-pie
 mkdir -p $KERNELDIR/BUILT_whyred-pie

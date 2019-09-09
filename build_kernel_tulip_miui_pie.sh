@@ -24,7 +24,7 @@ then
     make defconfig O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64 agni_tulip-miui_defconfig
 fi
 
-make -j3 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
+make -j8 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
 
 rm -rf $KERNELDIR/BUILT_tulip-miui_pie
 mkdir -p $KERNELDIR/BUILT_tulip-miui_pie
