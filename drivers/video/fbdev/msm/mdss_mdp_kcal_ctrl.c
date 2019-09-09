@@ -76,7 +76,7 @@ struct kcal_lut_data {
 	int cont;
 };
 
-int kcal_custom_mode = 4; //set Vivid mode Default
+int kcal_custom_mode = 0;
 int prev_kcal_r, prev_kcal_g, prev_kcal_b;
 int prev_kcal_min, prev_kcal_sat, prev_kcal_val, prev_kcal_cont;
 int user_kcal_r, user_kcal_g, user_kcal_b;

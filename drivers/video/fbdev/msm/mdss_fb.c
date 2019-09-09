@@ -2783,10 +2783,6 @@ static int mdss_fb_blank_unblank(struct msm_fb_data_type *mfd)
     cabc_resume = false;
     srgb_resume = false;
     gamma_resume = false;
-#ifndef CONFIG_MACH_XIAOMI_AGNI_MIUI
-    cabc_movie_resume = false;
-    cabc_still_resume = false;
-#endif
 error:
 	return ret;
 }
@@ -2875,10 +2871,6 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
         cabc_resume = true;
         srgb_resume = true;
         gamma_resume = true;
-#ifndef CONFIG_MACH_XIAOMI_AGNI_MIUI
-		cabc_movie_resume = true;
-		cabc_still_resume = true;
-#endif
 		printk("%s:blank powerdown called\n",__func__);
 		ret = mdss_fb_blank_blank(mfd, req_power_state);
 		break;
@@ -6103,7 +6095,7 @@ int mdss_prim_panel_fb_unblank(int timeout)
 {
 	int ret = 0;
 	struct msm_fb_data_type *mfd = NULL;
-        printk("prim_fbi 00\n");
+	printk("prim_fbi 00\n");
 	if (prim_fbi) {
 		printk("prim_fbi 01\n");
 		mfd = (struct msm_fb_data_type *)prim_fbi->par;

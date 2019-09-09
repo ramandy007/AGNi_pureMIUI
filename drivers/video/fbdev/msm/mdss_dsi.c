@@ -52,10 +52,9 @@ static struct mdss_dsi_data *mdss_dsi_res;
 #define DSI_ENABLE_PC_LATENCY PM_QOS_DEFAULT_VALUE
 
 static struct pm_qos_request mdss_dsi_pm_qos_request;
-#ifdef CONFIG_MACH_XIAOMI_AGNI_MIUI
 extern int mdss_first_set_feature(struct mdss_panel_data *pdata,int first_ce_state,int first_cabc_state,int first_srgb_state,int first_gamma_state,
 		int first_cabc_movie_state,int first_cabc_still_state);
-#endif
+
 
 #ifdef DSI_ACCESS
 
@@ -2193,11 +2192,9 @@ static int mdss_dsi_unblank(struct mdss_panel_data *pdata)
 			ATRACE_END("dsi_panel_on");
 		}
 	}
-#ifdef CONFIG_MACH_XIAOMI_AGNI_MIUI
 #if defined(CONFIG_KERNEL_CUSTOM_F7A)|| defined(CONFIG_KERNEL_DRIVER_D2S_CN) || defined(CONFIG_KERNEL_CUSTOM_E7T) || defined(CONFIG_KERNEL_CUSTOM_F7S)
 #else
     mdss_first_set_feature(pdata, -1,1,-1, -1, -1, -1);
-#endif
 #endif
 	if ((pdata->panel_info.type == MIPI_CMD_PANEL) &&
 		mipi->vsync_enable && mipi->hw_vsync_mode) {
@@ -3542,6 +3539,9 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		break;
 	case MDSS_EVENT_POST_PANEL_ON:
 		rc = mdss_dsi_post_panel_on(pdata);
+		break;
+	case MDSS_EVENT_PANEL_ON:
+		pdata->panel_info.esd_rdy = true;
 		break;
 	case MDSS_EVENT_BLANK:
 		power_state = (int) (unsigned long) arg;
