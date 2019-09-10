@@ -108,3 +108,4 @@ void zpool_register_driver(struct zpool_driver *driver);
 int zpool_unregister_driver(struct zpool_driver *driver);
 
 #endif
+

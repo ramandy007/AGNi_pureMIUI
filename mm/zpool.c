@@ -358,3 +358,4 @@ u64 zpool_get_total_size(struct zpool *zpool)
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dan Streetman <ddstreet@ieee.org>");
 MODULE_DESCRIPTION("Common API for compressed memory storage");
+
