@@ -25,6 +25,7 @@
 #include "fg-core.h"
 #include "fg-reg.h"
 #include <linux/charging_state.h>
+#include <linux/swap.h>
 
 #define FG_GEN3_DEV_NAME	"qcom,fg-gen3"
 
@@ -840,10 +841,12 @@ static int fg_get_msoc_raw(struct fg_chip *chip, int *val)
 }
 
 #define FULL_CAPACITY	100
+#define LOW_CAPACITY	25
 #define FULL_SOC_RAW	255
 #if defined(CONFIG_KERNEL_CUSTOM_D2S) || defined(CONFIG_KERNEL_CUSTOM_F7A)
 #define FULL_SOC_REPORT_THR 250
 #endif
+bool low_batt_swap_stall = false;
 
 static int fg_get_msoc(struct fg_chip *chip, int *msoc)
 {
@@ -892,6 +895,10 @@ static int fg_get_msoc(struct fg_chip *chip, int *msoc)
 	if (*msoc >= FULL_CAPACITY)
 		*msoc = FULL_CAPACITY;
 
+	if (*msoc <= LOW_CAPACITY)
+		low_batt_swap_stall = true;
+	else
+		low_batt_swap_stall = false;
 #endif
 	return 0;
 }
