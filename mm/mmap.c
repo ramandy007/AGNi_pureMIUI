@@ -43,6 +43,7 @@
 #include <linux/printk.h>
 #include <linux/userfaultfd_k.h>
 #include <linux/mm.h>
+#include <linux/ksm.h>
 
 #include <asm/uaccess.h>
 #include <asm/cacheflush.h>
@@ -319,6 +320,7 @@ static struct vm_area_struct *remove_vma(struct vm_area_struct *vma)
 	might_sleep();
 	if (vma->vm_ops && vma->vm_ops->close)
 		vma->vm_ops->close(vma);
+	uksm_remove_vma(vma);
 	put_vma(vma);
 	return next;
 }
@@ -818,6 +820,11 @@ int __vma_adjust(struct vm_area_struct *vma, unsigned long start,
 	int remove_next = 0;
 
 	/*
+	 * to avoid deadlock, ksm_remove_vma must be done before any spin_lock is
+	 * acquired
+  	*/
+	uksm_remove_vma(vma);
+	/*
 	 * Why using vm_raw_write*() functions here to avoid lockdep's warning ?
 	 *
 	 * Locked is complaining about a theoretical lock dependency, involving
@@ -844,6 +851,7 @@ int __vma_adjust(struct vm_area_struct *vma, unsigned long start,
 	if (next && !insert) {
 		struct vm_area_struct *exporter = NULL;
 
+		uksm_remove_vma(next);
 		if (end >= next->vm_end) {
 			/*
 			 * vma expands, overlapping all the next, and
@@ -1014,12 +1022,16 @@ again:			remove_next = 1 + (end > next->vm_end);
 		if (next)
 			vm_raw_write_begin(next);
 
-		if (remove_next == 2)
+		if (remove_next == 2) {
+			uksm_remove_vma(next);
 			goto again;
-		else if (next)
+		} else if (next)
 			vma_gap_update(next);
 		else
 			VM_WARN_ON(mm->highest_vm_end != vm_end_gap(vma));
+	} else {
+		if (next && !insert)
+			uksm_vma_add_new(next);
 	}
 	if (insert && file)
 		uprobe_mmap(insert);
@@ -1030,6 +1042,7 @@ again:			remove_next = 1 + (end > next->vm_end);
 	if (!keep_locked)
 		vm_raw_write_end(vma);
 
+	uksm_vma_add_new(vma);
 	validate_mm(mm);
 
 	return 0;
@@ -1475,6 +1488,9 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 	vm_flags |= calc_vm_prot_bits(prot) | calc_vm_flag_bits(flags) |
 			mm->def_flags | VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC;
 
+	/* If uksm is enabled, we add VM_MERGABLE to new VMAs. */
+	uksm_vm_flags_mod(&vm_flags);
+
 	if (flags & MAP_LOCKED)
 		if (!can_do_mlock())
 			return -EPERM;
@@ -1818,6 +1834,7 @@ unsigned long mmap_region(struct file *file, unsigned long addr,
 			allow_write_access(file);
 	}
 	file = vma->vm_file;
+	uksm_vma_add_new(vma);
 out:
 	perf_event_mmap(vma);
 
@@ -1862,6 +1879,7 @@ allow_write_and_free_vma:
 	if (vm_flags & VM_DENYWRITE)
 		allow_write_access(file);
 free_vma:
+	uksm_remove_vma(vma);
 	kmem_cache_free(vm_area_cachep, vma);
 unacct_error:
 	if (charged)
@@ -2707,6 +2725,8 @@ static int __split_vma(struct mm_struct *mm, struct vm_area_struct *vma,
 	else
 		err = vma_adjust(vma, vma->vm_start, addr, vma->vm_pgoff, new);
 
+	uksm_vma_add_new(new);
+
 	/* Success. */
 	if (!err)
 		return 0;
@@ -2963,6 +2983,7 @@ static unsigned long do_brk(unsigned long addr, unsigned long len)
 	int error;
 
 	flags = VM_DATA_DEFAULT_FLAGS | VM_ACCOUNT | mm->def_flags;
+	uksm_vm_flags_mod(&flags);
 
 	error = get_unmapped_area(NULL, addr, len, 0, MAP_FIXED);
 	if (offset_in_page(error))
@@ -3020,6 +3041,7 @@ static unsigned long do_brk(unsigned long addr, unsigned long len)
 	vma->vm_flags = flags;
 	vma->vm_page_prot = vm_get_page_prot(flags);
 	vma_link(mm, vma, prev, rb_link, rb_parent);
+	uksm_vma_add_new(vma);
 out:
 	perf_event_mmap(vma);
 	mm->total_vm += len >> PAGE_SHIFT;
@@ -3062,6 +3084,12 @@ void exit_mmap(struct mm_struct *mm)
 	/* mm's last user has gone, and its about to be pulled down */
 	mmu_notifier_release(mm);
 
+	/*
+	 * Taking write lock on mmap_sem does not harm others,
+	 * but it's crucial for uksm to avoid races.
+	 */
+	down_write(&mm->mmap_sem);
+
 	if (mm->locked_vm) {
 		vma = mm->mmap;
 		while (vma) {
@@ -3097,6 +3125,11 @@ void exit_mmap(struct mm_struct *mm)
 		vma = remove_vma(vma);
 	}
 	vm_unacct_memory(nr_accounted);
+
+	mm->mmap = NULL;
+	mm->mm_rb = RB_ROOT;
+	vmacache_invalidate(mm);
+	up_write(&mm->mmap_sem);
 }
 
 /* Insert vm structure into process list sorted by address
@@ -3229,6 +3262,7 @@ struct vm_area_struct *copy_vma(struct vm_area_struct **vmap,
 
 		vma_link(mm, new_vma, prev, rb_link, rb_parent);
 		*need_rmap_locks = false;
+		uksm_vma_add_new(new_vma);
 	}
 	return new_vma;
 
@@ -3334,10 +3368,10 @@ static struct vm_area_struct *__install_special_mapping(
 	ret = insert_vm_struct(mm, vma);
 	if (ret)
 		goto out;
-
 	mm->total_vm += len >> PAGE_SHIFT;
 
 	perf_event_mmap(vma);
+	uksm_vma_add_new(vma);
 
 	return vma;
 
