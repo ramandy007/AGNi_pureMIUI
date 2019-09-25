@@ -2165,7 +2165,8 @@ static int qpnp_wled_config(struct qpnp_wled *wled)
 	/* setup ovp and sc irqs */
 	if (wled->ovp_irq >= 0) {
 		rc = devm_request_threaded_irq(&wled->pdev->dev, wled->ovp_irq,
-				NULL, qpnp_wled_ovp_irq_handler, IRQF_ONESHOT,
+				NULL, qpnp_wled_ovp_irq_handler, 
+				IRQF_ONESHOT | IRQF_PERF_CRITICAL,
 				"qpnp_wled_ovp_irq", wled);
 		if (rc < 0) {
 			dev_err(&wled->pdev->dev,
@@ -2185,7 +2186,8 @@ static int qpnp_wled_config(struct qpnp_wled *wled)
 	if (wled->sc_irq >= 0) {
 		wled->sc_cnt = 0;
 		rc = devm_request_threaded_irq(&wled->pdev->dev, wled->sc_irq,
-				NULL, qpnp_wled_sc_irq_handler, IRQF_ONESHOT,
+				NULL, qpnp_wled_sc_irq_handler,
+				IRQF_ONESHOT | IRQF_PERF_CRITICAL,
 				"qpnp_wled_sc_irq", wled);
 		if (rc < 0) {
 			dev_err(&wled->pdev->dev,
