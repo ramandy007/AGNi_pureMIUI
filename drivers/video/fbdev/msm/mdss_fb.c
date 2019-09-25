@@ -384,7 +384,11 @@ static struct led_classdev backlight_led = {
 	.brightness     = MDSS_MAX_BL_BRIGHTNESS / 2,
 	.brightness_set = mdss_fb_set_bl_brightness,
 	.brightness_get = mdss_fb_get_bl_brightness,
+#ifdef CONFIG_MACH_XIAOMI_AGNI_MIUI
+	.max_brightness = MDSS_MAX_BL_BRIGHTNESS_MIUI,
+#else
 	.max_brightness = MDSS_MAX_BL_BRIGHTNESS,
+#endif
 };
 
 static ssize_t mdss_fb_get_type(struct device *dev,
@@ -2111,7 +2115,11 @@ static int mdss_fb_probe(struct platform_device *pdev)
 	/* android supports only one lcd-backlight/lcd for now */
 	if (!lcd_backlight_registered) {
 		backlight_led.brightness = mfd->panel_info->brightness_max;
+#ifdef CONFIG_MACH_XIAOMI_AGNI_MIUI
+		backlight_led.max_brightness = MDSS_MAX_BL_BRIGHTNESS_MIUI;
+#else
 		backlight_led.max_brightness = mfd->panel_info->brightness_max;
+#endif
 		if (led_classdev_register(&pdev->dev, &backlight_led))
 			pr_err("led_classdev_register failed\n");
 		else
