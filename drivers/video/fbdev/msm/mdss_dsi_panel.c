@@ -1262,6 +1262,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	}
 	
 	display_on = false;
+	sched_set_boost(0);
 
 end:
 	pr_err("%s:-\n", __func__);
