@@ -508,10 +508,10 @@ int f2fs_submit_page_bio(struct f2fs_io_info *fio)
 
 	bio_set_op_attrs(bio, fio->op, fio->op_flags);
 
-	inc_page_count(fio->sbi, is_read_io(fio->op) ?
-			__read_io_type(page): WB_DATA_TYPE(fio->page));
+	if (!is_read_io(fio->op))
+		inc_page_count(fio->sbi, WB_DATA_TYPE(fio->page));
 
-	__f2fs_submit_read_bio(fio->sbi, bio, fio->type);
+	__submit_bio(fio->sbi, bio, fio->type);
 	return 0;
 }
 
@@ -525,7 +525,7 @@ int f2fs_merge_page_bio(struct f2fs_io_info *fio)
 			__is_meta_io(fio) ? META_GENERIC : DATA_GENERIC))
 		return -EFSCORRUPTED;
 
-	trace_f2fs_submit_page_bio(page, fio);
+//	trace_f2fs_submit_page_bio(page, fio);
 	f2fs_trace_ios(fio, 0);
 
 	if (bio && (*fio->last_block + 1 != fio->new_blkaddr ||
@@ -2318,7 +2318,11 @@ continue_unlock:
 					ret = 0;
 					if (wbc->sync_mode == WB_SYNC_ALL) {
 						cond_resched();
-						congestion_wait(BLK_RW_ASYNC, msecs_to_jiffies(6));
+#if (CONFIG_HZ > 100)
+						congestion_wait(BLK_RW_ASYNC, 2);
+#else
+						congestion_wait(BLK_RW_ASYNC, 1);
+#endif
 						goto retry_write;
 					}
 					continue;
