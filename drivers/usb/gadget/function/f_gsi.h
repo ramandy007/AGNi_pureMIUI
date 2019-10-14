@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
- * Copyright (C) 2019 XiaoMi, Inc.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -32,7 +31,7 @@
 #define GSI_MBIM_CTRL_NAME "android_mbim"
 #define GSI_DPL_CTRL_NAME "dpl_ctrl"
 #define GSI_CTRL_NAME_LEN (sizeof(GSI_MBIM_CTRL_NAME)+2)
-#define GSI_MAX_CTRL_PKT_SIZE 4096
+#define GSI_MAX_CTRL_PKT_SIZE 8192
 #define GSI_CTRL_DTR (1 << 0)
 
 
@@ -472,12 +471,9 @@ static struct usb_interface_descriptor rndis_gsi_control_intf = {
 	/* .bInterfaceNumber = DYNAMIC */
 	/* status endpoint is optional; this could be patched later */
 	.bNumEndpoints =	1,
-
-
-
-	.bInterfaceClass =	USB_CLASS_WIRELESS_CONTROLLER,
-	.bInterfaceSubClass =   0x01,
-	.bInterfaceProtocol =   0x03,
+	.bInterfaceClass =	USB_CLASS_MISC,
+	.bInterfaceSubClass =   0x04,
+	.bInterfaceProtocol =   0x01, /* RNDIS over Ethernet */
 	/* .iInterface = DYNAMIC */
 };
 
@@ -535,12 +531,9 @@ rndis_gsi_iad_descriptor = {
 	.bDescriptorType =	USB_DT_INTERFACE_ASSOCIATION,
 	.bFirstInterface =	0, /* XXX, hardcoded */
 	.bInterfaceCount =	2, /* control + data */
-
-
-
-	.bFunctionClass =	USB_CLASS_WIRELESS_CONTROLLER,
-	.bFunctionSubClass =	0x01,
-	.bFunctionProtocol =	0x03,
+	.bFunctionClass =	USB_CLASS_MISC,
+	.bFunctionSubClass =	0x04,
+	.bFunctionProtocol =	0x01, /* RNDIS over Ethernet */
 	/* .iFunction = DYNAMIC */
 };
 
