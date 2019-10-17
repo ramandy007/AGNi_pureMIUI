@@ -22,7 +22,7 @@
  *
  * 0: User Mode (use the values set for the individual kcal tunables)
  * 1: Standard Mode
- * 2: Night Mode (uses backlight dimmer algorithm)
+ * 2: Night Mode
  * 3: Warm Mode
  * 4: Vivid Mode
  * 5: Reading Mode
@@ -47,10 +47,6 @@
 
 #include "mdss_mdp.h"
 #include "mdss_dsi.h"
-
-#ifdef CONFIG_KLAPSE
-#include "klapse.h"
-#endif
 
 #define DEF_PCC 0x100
 #define DEF_PA 0xff
@@ -83,7 +79,6 @@ int user_kcal_r, user_kcal_g, user_kcal_b;
 int user_kcal_min, user_kcal_sat, user_kcal_val, user_kcal_cont;
 int mode_kcal_r, mode_kcal_g, mode_kcal_b;
 int mode_kcal_min, mode_kcal_sat, mode_kcal_val, mode_kcal_cont;
-bool prev_backlight_dimmer, mode_backlight_dimmer;
 
 struct mdss_mdp_ctl *fb0_ctl = 0;
 
@@ -98,7 +93,6 @@ static void kcal_mode_save_prev(struct device *dev) {
     prev_kcal_sat = lut_data->sat;
     prev_kcal_val = lut_data->val;
     prev_kcal_cont = lut_data->cont;
-    prev_backlight_dimmer = backlight_dimmer;
 
 }
 
@@ -113,7 +107,6 @@ static void kcal_mode_save_mode(struct device *dev) {
     lut_data->sat = mode_kcal_sat;
     lut_data->val = mode_kcal_val;
     lut_data->cont = mode_kcal_cont;
-    backlight_dimmer = mode_backlight_dimmer;
 
 }
 
@@ -131,7 +124,6 @@ static void kcal_apply_mode(struct device *dev) {
         mode_kcal_sat = user_kcal_sat;
         mode_kcal_val = user_kcal_val;
         mode_kcal_cont = user_kcal_cont;
-        mode_backlight_dimmer = prev_backlight_dimmer;
 		break;
 	case 1:
         /* STANDARD MODE */
@@ -142,7 +134,6 @@ static void kcal_apply_mode(struct device *dev) {
         mode_kcal_sat = 255;
         mode_kcal_val = 255;
         mode_kcal_cont = 255;
-        mode_backlight_dimmer = prev_backlight_dimmer;
 		break;
 	case 2:
         /* NIGHT MODE */
@@ -153,7 +144,6 @@ static void kcal_apply_mode(struct device *dev) {
         mode_kcal_sat = 265;
         mode_kcal_val = 255;
         mode_kcal_cont = 255;
-        mode_backlight_dimmer = true;
 		break;
 	case 3:
         /* WARM MODE */
@@ -164,7 +154,6 @@ static void kcal_apply_mode(struct device *dev) {
         mode_kcal_sat = 275;
         mode_kcal_val = 251;
         mode_kcal_cont = 258;
-        mode_backlight_dimmer = prev_backlight_dimmer;
 		break;
 	case 4:
         /* VIVID MODE */
@@ -175,7 +164,6 @@ static void kcal_apply_mode(struct device *dev) {
         mode_kcal_sat = 270;
         mode_kcal_val = 257;
         mode_kcal_cont = 265;
-        mode_backlight_dimmer = prev_backlight_dimmer;
 		break;
 	case 5:
         /* READING MODE */
@@ -186,7 +174,6 @@ static void kcal_apply_mode(struct device *dev) {
         mode_kcal_sat = 255;
         mode_kcal_val = 255;
         mode_kcal_cont = 255;
-        mode_backlight_dimmer = prev_backlight_dimmer;
 		break;
 	case 6:
         /* VIVID 2 MODE */
@@ -197,7 +184,6 @@ static void kcal_apply_mode(struct device *dev) {
         mode_kcal_sat = 265;
         mode_kcal_val = 257;
         mode_kcal_cont = 255;
-        mode_backlight_dimmer = prev_backlight_dimmer;
  		break;
 	default:
 		break;
@@ -341,42 +327,6 @@ static void mdss_mdp_kcal_read_pcc(struct kcal_lut_data *lut_data)
 	lut_data->green = (pcc_config.g.g & 0xffff) / PCC_ADJ;
 	lut_data->blue = (pcc_config.b.b & 0xffff) / PCC_ADJ;
 }
-
-#ifdef CONFIG_KLAPSE
-static struct platform_device kcal_ctrl_device;
-
-void kcal_ext_apply_values(int red, int green, int blue)
-{
-	struct kcal_lut_data *lut_data =
-				platform_get_drvdata(&kcal_ctrl_device);
-
-	lut_data->red = red;
-	lut_data->green = green;
-	lut_data->blue = blue;
-
-	if (mdss_mdp_kcal_is_panel_on())
-		mdss_mdp_kcal_update_pcc(lut_data);
-	else
-		lut_data->queue_changes = true;
-}
-
-int kcal_ext_get_value(int color)
-{
-	struct kcal_lut_data *lut_data =
-				platform_get_drvdata(&kcal_ctrl_device);
-
-	switch (color) {
-		case KCAL_RED:
-			return lut_data->red;
-		case KCAL_GREEN:
-			return lut_data->green;
-		case KCAL_BLUE:
-			return lut_data->blue;
-		default:
-			return -1;
-	}
-}
-#endif
 
 static void mdss_mdp_kcal_update_pa(struct kcal_lut_data *lut_data)
 {

@@ -61,11 +61,9 @@
 #include "mdss_mdp.h"
 #include "dsi_access.h"
 
-#ifdef CONFIG_KLAPSE
-#include "klapse.h"
-#endif
-
+#ifdef CONFIG_FB_MSM_MDSS_LIVEDISPLAY
 #include "mdss_livedisplay.h"
+#endif
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MDSS_FB_NUM 3
@@ -76,11 +74,6 @@
 #ifndef EXPORT_COMPAT
 #define EXPORT_COMPAT(x)
 #endif
-
-//Easily enable sRGB with module param
-//Part of the sRGB reset fix!
-int srgb_enabled = 0;
-module_param(srgb_enabled, int, 0644);
 
 #define MAX_FBI_LIST 32
 
@@ -97,12 +90,6 @@ module_param(srgb_enabled, int, 0644);
  * Default value is set to 1 sec.
  */
 #define MDP_TIME_PERIOD_CALC_FPS_US	1000000
-
-#define MDSS_BRIGHT_TO_BL_DIM(out, v) do {\
-			out = (12*v*v+1393*v+3060)/4465;\
-			} while (0)
-bool backlight_dimmer = false;
-module_param(backlight_dimmer, bool, 0644);
 
 static struct fb_info *fbi_list[MAX_FBI_LIST];
 static int fbi_list_index;
@@ -345,14 +332,10 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
 
-	if (backlight_dimmer) {
-		MDSS_BRIGHT_TO_BL_DIM(bl_lvl, value);
-	} else {
-		/* This maps android backlight level 0 to 255 into
-		   driver backlight level 0 to bl_max with rounding */
-		MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
-					mfd->panel_info->brightness_max);
-	}
+	/* This maps android backlight level 0 to 255 into
+	   driver backlight level 0 to bl_max with rounding */
+	MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
+				mfd->panel_info->brightness_max);
 
 	if (!bl_lvl && value)
 		bl_lvl = 1;
@@ -364,10 +347,6 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 		mutex_unlock(&mfd->bl_lock);
 	}
 	mfd->bl_level_usr = bl_lvl;
-
-#ifdef CONFIG_KLAPSE
-	set_rgb_slider(bl_lvl);
-#endif
 }
 
 static enum led_brightness mdss_fb_get_bl_brightness(
@@ -1003,11 +982,6 @@ int mdss_first_set_feature(struct mdss_panel_data *pdata, int first_ce_state, in
 	if((first_ce_state != -1) || (first_cabc_state != -1) || (first_srgb_state != -1) || (first_gamma_state != -1))
 		printk("%s,first_ce_state: %d,first_cabc_state: %d,first_srgb_state=%d,first_gamma_state=%d\n",__func__,
 			first_ce_state,first_cabc_state,first_srgb_state,first_gamma_state);
-
-	//This simply fixes sRGB reset after screen off/on
-	if(srgb_enabled == 1){
-		first_srgb_state = 2;
-	}
 
 	switch(first_ce_state) {
 		case 0x1:
@@ -1736,7 +1710,11 @@ static int mdss_fb_create_sysfs(struct msm_fb_data_type *mfd)
 	rc = sysfs_create_group(&mfd->fbi->dev->kobj, &mdss_fb_attr_group);
 	if (rc)
 		pr_err("sysfs group creation failed, rc=%d\n", rc);
+#ifdef CONFIG_FB_MSM_MDSS_LIVEDISPLAY
 	return mdss_livedisplay_create_sysfs(mfd);
+#else
+	return rc;
+#endif
 }
 
 static void mdss_fb_remove_sysfs(struct msm_fb_data_type *mfd)
@@ -2803,6 +2781,8 @@ static int mdss_fb_blank_unblank(struct msm_fb_data_type *mfd)
     cabc_resume = false;
     srgb_resume = false;
     gamma_resume = false;
+    cabc_movie_resume = false;
+    cabc_still_resume = false;
 error:
 	return ret;
 }
@@ -2887,11 +2867,13 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 	case FB_BLANK_POWERDOWN:
 	default:
 		req_power_state = MDSS_PANEL_POWER_OFF;
-        ce_resume = true;
-        cabc_resume = true;
-        srgb_resume = true;
-        gamma_resume = true;
-		printk("%s:blank powerdown called\n",__func__);
+		ce_resume = true;
+		cabc_resume = true;
+		srgb_resume = true;
+		gamma_resume = true;
+		cabc_movie_resume = true;
+		cabc_still_resume = true;
+		pr_debug("blank powerdown called\n");
 		ret = mdss_fb_blank_blank(mfd, req_power_state);
 		break;
 	}
@@ -2939,7 +2921,7 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 		ret = 0;
 		goto end;
 	}
-	pr_info("%s: blank_mode: %d\n",__func__, blank_mode);
+	pr_debug("mode: %d\n", blank_mode);
 
 	pdata = dev_get_platdata(&mfd->pdev->dev);
 
@@ -5503,6 +5485,7 @@ static int mdss_fb_atomic_commit_ioctl(struct fb_info *info,
 	struct mdp_destination_scaler_data __user *ds_data_user;
 	struct msm_fb_data_type *mfd;
 	struct mdss_overlay_private *mdp5_data = NULL;
+	struct mdss_data_type *mdata;
 
 	ret = copy_from_user(&commit, argp, sizeof(struct mdp_layer_commit));
 	if (ret) {
@@ -5605,6 +5588,13 @@ static int mdss_fb_atomic_commit_ioctl(struct fb_info *info,
 	ds_data_user = commit.commit_v1.dest_scaler;
 	if ((ds_data_user) &&
 		(commit.commit_v1.dest_scaler_cnt)) {
+		mdata = mfd_to_mdata(mfd);
+		if (!mdata || !mdata->scaler_off ||
+				 !mdata->scaler_off->has_dest_scaler) {
+			pr_err("dest scaler not supported\n");
+			ret = -EPERM;
+			goto err;
+		}
 		ret = __mdss_fb_copy_destscaler_data(info, &commit);
 		if (ret) {
 			pr_err("copy dest scaler failed\n");
