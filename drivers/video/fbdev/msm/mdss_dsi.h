@@ -640,10 +640,6 @@ struct mdss_dsi_ctrl_pdata {
 	atomic_t needs_wake;
 
 	struct pm_qos_request pm_qos_req;
-	int disp_err_detect_gpio;
-	struct delayed_work err_int_work;
-	bool rdy_err_detect;
-	bool err_detect_irq_en;
 };
 
 struct dsi_status_data {
@@ -682,8 +678,6 @@ int mdss_dsi_wait_for_lane_idle(struct mdss_dsi_ctrl_pdata *ctrl);
 
 irqreturn_t mdss_dsi_isr(int irq, void *ptr);
 irqreturn_t hw_vsync_handler(int irq, void *data);
-irqreturn_t disp_err_detect_handler(int irq, void *data);
-void disp_err_recovery_work(struct work_struct *work);
 void disable_esd_thread(void);
 void mdss_dsi_irq_handler_config(struct mdss_dsi_ctrl_pdata *ctrl_pdata);
 

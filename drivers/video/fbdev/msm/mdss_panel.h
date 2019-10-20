@@ -764,7 +764,9 @@ struct mdss_dsi_dual_pu_roi {
 	bool enabled;
 };
 
+#ifdef CONFIG_FB_MSM_MDSS_LIVEDISPLAY
 struct mdss_livedisplay_ctx;
+#endif
 
 struct mdss_panel_hdr_properties {
 	bool hdr_enabled;
@@ -926,7 +928,9 @@ struct mdss_panel_info {
 	 */
 	u32 adjust_timer_delay_ms;
 
+#ifdef CONFIG_FB_MSM_MDSS_LIVEDISPLAY
 	struct mdss_livedisplay_ctx *livedisplay;
+#endif
 
 	/* debugfs structure for the panel */
 	struct mdss_panel_debugfs_info *debugfs_info;
@@ -939,8 +943,6 @@ struct mdss_panel_info {
 
 	/* HDR properties of display panel*/
 	struct mdss_panel_hdr_properties hdr_properties;
-
-	u32 err_detect_enabled;
 
 	/* esc clk recommended for the panel */
 	u32 esc_clk_rate_hz;
