@@ -248,18 +248,6 @@ config COMPACTION
 	help
 	  Allows the compaction of memory for the allocation of huge pages.
 
-config PROCESS_RECLAIM
-	bool "Enable process reclaim"
-	depends on PROC_FS
-	default n
-	help
-	 It allows to reclaim pages of the process by /proc/pid/reclaim.
-
-	 (echo file > /proc/PID/reclaim) reclaims file-backed pages only.
-	 (echo anon > /proc/PID/reclaim) reclaims anonymous pages only.
-	 (echo all > /proc/PID/reclaim) reclaims all pages.
-
-	 Any other value is ignored.
 #
 # support for page migration
 #
@@ -321,15 +309,6 @@ config MMU_NOTIFIER
 	bool
 	select SRCU
 
-config READAHEAD
-	bool "Enable page cache readahead"
-	default y
-	help
-	  Enable pages to be read ahead of time on an I/O request. The block
-	  parameter is named read_ahead_kb. By default, the kernel reads
-	  512 KiB ahead. Readahead is highly recommended on most systems,
-	  especially those with rotational disk storage.
-
 config KSM
 	bool "Enable KSM for page merging"
 	depends on MMU
@@ -343,32 +322,6 @@ config KSM
 	  See Documentation/vm/ksm.txt for more information: KSM is inactive
 	  until a program has madvised that an area is MADV_MERGEABLE, and
 	  root has set /sys/kernel/mm/ksm/run to 1 (if CONFIG_SYSFS is set).
-choice
-	prompt "Choose UKSM/KSM strategy"
-	default UKSM
-	depends on KSM
-	help
-	  This option allows to select a UKSM/KSM stragety.
-
-config UKSM
-	bool "Ultra-KSM for page merging"
-	depends on KSM
-	help
-	UKSM is inspired by the Linux kernel project \u2014 KSM(Kernel Same
-	page Merging), but with a fundamentally rewritten core algorithm. With
-	an advanced algorithm, UKSM now can transparently scans all anonymously
-	mapped user space applications with an significantly improved scan speed
-	and CPU efficiency. Since KVM is friendly to KSM, KVM can also benefit from
-	UKSM. Now UKSM has its first stable release and first real world enterprise user.
-	For more information, please goto its project page.
-	(www.kerneldedup.org)
-
-config KSM_LEGACY
-	bool "Legacy KSM implementation"
-	depends on KSM
-	help
-	The legacy KSM implementation from Redhat.
-endchoice
 
 config DEFAULT_MMAP_MIN_ADDR
         int "Low address space to protect from user allocation"
@@ -775,51 +728,18 @@ config FORCE_ALLOC_FROM_DMA_ZONE
 
 	  If unsure, say "n".
 
-config ARCH_HAS_PTE_SPECIAL
-	bool
-
-config ARCH_SUPPORTS_SPECULATIVE_PAGE_FAULT
-       def_bool n
-
-config SPECULATIVE_PAGE_FAULT
-	bool "Speculative page faults"
-	default y
-	depends on ARCH_SUPPORTS_SPECULATIVE_PAGE_FAULT
-	depends on ARCH_HAS_PTE_SPECIAL && MMU && SMP
+config PROCESS_RECLAIM
+	bool "Enable process reclaim"
+	depends on PROC_FS
+	default n
 	help
-	  Try to handle user space page faults without holding the mmap_sem.
+	 It allows to reclaim pages of the process by /proc/pid/reclaim.
 
-	  This should allow better concurrency for massively threaded processes
-	  since the page fault handler will not wait for other thread's memory
-	  layout change to be done, assuming that this change is done in
-	  another part of the process's memory space. This type of page fault
-	  is named speculative page fault.
+	 (echo file > /proc/PID/reclaim) reclaims file-backed pages only.
+	 (echo anon > /proc/PID/reclaim) reclaims anonymous pages only.
+	 (echo all > /proc/PID/reclaim) reclaims all pages.
 
-	  If the speculative page fault fails because a concurrent modification
-	  is detected or because underlying PMD or PTE tables are not yet
-	  allocated, the speculative page fault fails and a classic page fault
-	  is then tried.
+	 (echo addr size-byte > /proc/PID/reclaim) reclaims pages in
+	 (addr, addr + size-bytes) of the process.
 
-config VM_MAX_READAHEAD
-	int "default max readahead window size"
-	default 128
-	help
-	 This sets the VM_MAX_READAHEAD value to allow the readahead window
-	 to grow to a maximum size of configured. This will benefit sequential
-	 read throughput and thus early boot performance.
-
-config DIRTY_RATIO
-	int "Default dirty ratio for writeback"
-	default 7
-	help
-	  The percentage of memory which may be used for dirty pages before the
-	  kernel commits dirty data to disk when another process performs a
-	  write call.
-
-config DIRTY_BACKGROUND_RATIO
-	int "Default background dirty ratio for writeback"
-	default 3
-	help
-	  The percentage of memory which may be used for dirty pages before the
-	  kernel's background writeback threads start committing the dirty data
-	  to disk.
+	 Any other vaule is ignored.

@@ -767,9 +767,6 @@ const char * const vmstat_text[] = {
 	"nr_swapcache",
 	"nr_indirectly_reclaimable",
 
-#ifdef CONFIG_UKSM
-	"nr_uksm_zero_pages",
-#endif
 	/* enum writeback_stat_item counters */
 	"nr_dirty_threshold",
 	"nr_dirty_background_threshold",
@@ -873,9 +870,6 @@ const char * const vmstat_text[] = {
 #ifdef CONFIG_DEBUG_VM_VMACACHE
 	"vmacache_find_calls",
 	"vmacache_find_hits",
-#endif
-#ifdef CONFIG_SPECULATIVE_PAGE_FAULT
-	"speculative_pgfault",
 #endif
 #endif /* CONFIG_VM_EVENTS_COUNTERS */
 };
@@ -1493,8 +1487,8 @@ static void vmstat_shepherd(struct work_struct *w)
 	for_each_cpu(cpu, cpu_stat_off) {
 		struct delayed_work *dw = &per_cpu(vmstat_work, cpu);
 
-		if (need_update(cpu)) {
-			if (!cpu_isolated(cpu) && cpumask_test_and_clear_cpu(cpu, cpu_stat_off))
+		if (!cpu_isolated(cpu) && need_update(cpu)) {
+			if (cpumask_test_and_clear_cpu(cpu, cpu_stat_off))
 				queue_delayed_work_on(cpu, vmstat_wq, dw, 0);
 		} else {
 			/*

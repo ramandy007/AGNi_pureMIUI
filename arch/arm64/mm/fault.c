@@ -343,16 +343,6 @@ static int __kprobes do_page_fault(unsigned long addr, unsigned int esr,
 	}
 
 	/*
-	 * let's try a speculative page fault without grabbing the
-	 * mmap_sem.
-	 */
-	fault = handle_speculative_fault(mm, addr, mm_flags);
-	if (fault != VM_FAULT_RETRY) {
-		perf_sw_event(PERF_COUNT_SW_SPF, 1, regs, addr);
-		goto done;
-	}
-
-	/*
 	 * As per x86, we may deadlock here. However, since the kernel only
 	 * validly references user space from well defined areas of the code,
 	 * we can bug out early if this is from code which shouldn't.
@@ -416,8 +406,6 @@ retry:
 	}
 
 	up_read(&mm->mmap_sem);
-
-done:
 
 	/*
 	 * Handle the "normal" case first - VM_FAULT_MAJOR / VM_FAULT_MINOR
@@ -705,8 +693,8 @@ asmlinkage int __exception do_debug_exception(unsigned long addr_if_watchpoint,
 	 * Tell lockdep we disabled irqs in entry.S. Do nothing if they were
 	 * already disabled to preserve the last enabled/disabled addresses.
 	 */
-	if (interrupts_enabled(regs))
-		trace_hardirqs_off();
+//	if (interrupts_enabled(regs))
+//		trace_hardirqs_off();
 
 	if (!inf->fn(addr_if_watchpoint, esr, regs)) {
 		rv = 1;
@@ -722,8 +710,8 @@ asmlinkage int __exception do_debug_exception(unsigned long addr_if_watchpoint,
 		rv = 0;
 	}
 
-	if (interrupts_enabled(regs))
-		trace_hardirqs_on();
+//	if (interrupts_enabled(regs))
+//		trace_hardirqs_on();
 
 	return rv;
 }

@@ -1,7 +1,6 @@
 /* internal.h: mm/ internal definitions
  *
  * Copyright (C) 2004 Red Hat, Inc. All Rights Reserved.
- * Copyright (C) 2019 XiaoMi, Inc.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -34,26 +33,6 @@
 
 /* Do not use these with a slab allocator */
 #define GFP_SLAB_BUG_MASK (__GFP_DMA32|__GFP_HIGHMEM|~__GFP_BITS_MASK)
-
-#ifdef CONFIG_SPECULATIVE_PAGE_FAULT
-extern struct vm_area_struct *get_vma(struct mm_struct *mm,
-				      unsigned long addr);
-extern void put_vma(struct vm_area_struct *vma);
-
-static inline bool vma_has_changed(struct vm_fault *vmf)
-{
-	int ret = RB_EMPTY_NODE(&vmf->vma->vm_rb);
-	unsigned int seq = READ_ONCE(vmf->vma->vm_sequence.sequence);
-
-	/*
-	 * Matches both the wmb in write_seqlock_{begin,end}() and
-	 * the wmb in vma_rb_erase().
-	 */
-	smp_rmb();
-
-	return ret || seq != vmf->sequence;
-}
-#endif /* CONFIG_SPECULATIVE_PAGE_FAULT */
 
 void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *start_vma,
 		unsigned long floor, unsigned long ceiling);
@@ -247,9 +226,9 @@ isolate_freepages_range(struct compact_control *cc,
 unsigned long
 isolate_migratepages_range(struct compact_control *cc,
 			   unsigned long low_pfn, unsigned long end_pfn);
-int find_suitable_fallback(struct free_area *area, unsigned int current_order,
-			   int migratetype, bool only_stealable,
-			   int start_order, bool *can_steal);
+int find_suitable_fallback(struct free_area *area, unsigned int order,
+			int migratetype, bool only_stealable, bool *can_steal);
+
 #endif
 
 /*
@@ -334,10 +313,8 @@ static inline void mlock_migrate_page(struct page *newpage, struct page *page)
 
 extern pmd_t maybe_pmd_mkwrite(pmd_t pmd, struct vm_area_struct *vma);
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 extern unsigned long vma_address(struct page *page,
 				 struct vm_area_struct *vma);
-#endif
 #else /* !CONFIG_MMU */
 static inline void clear_page_mlock(struct page *page) { }
 static inline void mlock_vma_page(struct page *page) { }

@@ -92,14 +92,17 @@ static int test_task_flag(struct task_struct *p, int flag)
 {
 	struct task_struct *t = p;
 
-	do {
+	rcu_read_lock();
+	for_each_thread(p, t) {
 		task_lock(t);
 		if (test_tsk_thread_flag(t, flag)) {
 			task_unlock(t);
+			rcu_read_unlock();
 			return 1;
 		}
 		task_unlock(t);
-	} while_each_thread(p, t);
+	}
+	rcu_read_unlock();
 
 	return 0;
 }
@@ -168,19 +171,19 @@ static void swap_fn(struct work_struct *work)
 		}
 	}
 
-	for (i = 0; i < si; i++) {
-		get_task_struct(selected[i].p);
+	for (i = 0; i < si; i++)
 		total_sz += selected[i].tasksize;
-	}
-
-	rcu_read_unlock();
 
 	/* Skip reclaim if total size is too less */
 	if (total_sz < SWAP_CLUSTER_MAX) {
-		for (i = 0; i < si; i++)
-			put_task_struct(selected[i].p);
+		rcu_read_unlock();
 		return;
 	}
+
+	for (i = 0; i < si; i++)
+		get_task_struct(selected[i].p);
+
+	rcu_read_unlock();
 
 	while (si--) {
 		nr_to_reclaim =
@@ -197,10 +200,10 @@ static void swap_fn(struct work_struct *work)
 
 		rp = reclaim_task_anon(selected[si].p, nr_to_reclaim);
 
-		trace_process_reclaim(selected[si].tasksize,
-				selected[si].oom_score_adj, rp.nr_scanned,
-				rp.nr_reclaimed, per_swap_size, total_sz,
-				nr_to_reclaim);
+//		trace_process_reclaim(selected[si].tasksize,
+//				selected[si].oom_score_adj, rp.nr_scanned,
+//				rp.nr_reclaimed, per_swap_size, total_sz,
+//				nr_to_reclaim);
 		total_scan += rp.nr_scanned;
 		total_reclaimed += rp.nr_reclaimed;
 		put_task_struct(selected[si].p);
@@ -211,7 +214,7 @@ static void swap_fn(struct work_struct *work)
 
 		if (efficiency < swap_opt_eff) {
 			if (++monitor_eff == swap_eff_win) {
-				atomic_set(&skip_reclaim, swap_eff_win + 1);
+				atomic_set(&skip_reclaim, swap_eff_win);
 				monitor_eff = 0;
 			}
 		} else {
@@ -220,7 +223,7 @@ static void swap_fn(struct work_struct *work)
 
 		reclaim_avg_efficiency =
 			(efficiency + reclaim_avg_efficiency) / 2;
-		trace_process_reclaim_eff(efficiency, reclaim_avg_efficiency);
+//		trace_process_reclaim_eff(efficiency, reclaim_avg_efficiency);
 	}
 }
 
@@ -235,12 +238,12 @@ static int vmpressure_notifier(struct notifier_block *nb,
 	if (!current_is_kswapd())
 		return 0;
 
-	if (!atomic_dec_and_test(&skip_reclaim))
+	if (atomic_dec_if_positive(&skip_reclaim) >= 0)
 		return 0;
 
 	if ((pressure >= pressure_min) && (pressure < pressure_max))
 		if (!work_pending(&swap_work))
-			schedule_work(&swap_work);
+			queue_work(system_unbound_wq, &swap_work);
 	return 0;
 }
 
