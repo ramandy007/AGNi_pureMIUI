@@ -139,4 +139,11 @@ config FB_MSM_MDSS_LIVEDISPLAY
 	     RGB offset postprocessing, since we're going to do this using
 	     the official QDCM APIs.
 
+config KLAPSE
+    bool CONFIG_KLAPSE
+    depends on FB_MSM_MDSS
+    default n
+    help
+        A simple rgb dynamic lapsing module similar to LineageOS' livedisplay
+
 endif
