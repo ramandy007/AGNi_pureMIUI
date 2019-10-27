@@ -1,6 +1,7 @@
 /* internal.h: mm/ internal definitions
  *
  * Copyright (C) 2004 Red Hat, Inc. All Rights Reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  * Written by David Howells (dhowells@redhat.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -226,9 +227,9 @@ isolate_freepages_range(struct compact_control *cc,
 unsigned long
 isolate_migratepages_range(struct compact_control *cc,
 			   unsigned long low_pfn, unsigned long end_pfn);
-int find_suitable_fallback(struct free_area *area, unsigned int order,
-			int migratetype, bool only_stealable, bool *can_steal);
-
+int find_suitable_fallback(struct free_area *area, unsigned int current_order,
+			   int migratetype, bool only_stealable,
+			   int start_order, bool *can_steal);
 #endif
 
 /*
@@ -313,8 +314,10 @@ static inline void mlock_migrate_page(struct page *newpage, struct page *page)
 
 extern pmd_t maybe_pmd_mkwrite(pmd_t pmd, struct vm_area_struct *vma);
 
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 extern unsigned long vma_address(struct page *page,
 				 struct vm_area_struct *vma);
+#endif
 #else /* !CONFIG_MMU */
 static inline void clear_page_mlock(struct page *page) { }
 static inline void mlock_vma_page(struct page *page) { }
