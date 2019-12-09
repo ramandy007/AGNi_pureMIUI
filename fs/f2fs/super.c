@@ -909,11 +909,11 @@ static int f2fs_drop_inode(struct inode *inode)
 			spin_lock(&inode->i_lock);
 			atomic_dec(&inode->i_count);
 		}
-		trace_f2fs_drop_inode(inode, 0);
+		//trace_f2fs_drop_inode(inode, 0);
 		return 0;
 	}
 	ret = generic_drop_inode(inode);
-	trace_f2fs_drop_inode(inode, ret);
+	//trace_f2fs_drop_inode(inode, ret);
 	return ret;
 }
 
@@ -1071,6 +1071,7 @@ static void f2fs_put_super(struct super_block *sb)
 	 * above failed with error.
 	 */
 	f2fs_destroy_stats(sbi);
+	f2fs_sbi_list_del(sbi);
 
 	/* destroy f2fs internal modules */
 	f2fs_destroy_node_manager(sbi);
@@ -1108,7 +1109,7 @@ int f2fs_sync_fs(struct super_block *sb, int sync)
 	if (unlikely(is_sbi_flag_set(sbi, SBI_CP_DISABLED)))
 		return 0;
 
-	trace_f2fs_sync_fs(sb, sync);
+	//trace_f2fs_sync_fs(sb, sync);
 
 	if (unlikely(is_sbi_flag_set(sbi, SBI_POR_DOING)))
 		return -EAGAIN;
@@ -1419,7 +1420,6 @@ static void default_options(struct f2fs_sb_info *sbi)
 	F2FS_OPTION(sbi).s_resuid = make_kuid(&init_user_ns, F2FS_DEF_RESUID);
 	F2FS_OPTION(sbi).s_resgid = make_kgid(&init_user_ns, F2FS_DEF_RESGID);
 
-	set_opt(sbi, BG_GC);
 	set_opt(sbi, INLINE_XATTR);
 	set_opt(sbi, INLINE_DATA);
 	set_opt(sbi, INLINE_DENTRY);
@@ -3320,6 +3320,8 @@ try_onemore:
 		goto free_stats;
 	}
 
+	f2fs_sbi_list_add(sbi);
+
 	/* read root inode and dentry */
 	root = f2fs_iget(sb, F2FS_ROOT_INO(sbi));
 	if (IS_ERR(root)) {
@@ -3586,9 +3588,12 @@ static int __init init_f2fs_fs(void)
 	err = init_inodecache();
 	if (err)
 		goto fail;
-	err = f2fs_create_node_manager_caches();
+	err = f2fs_init_xattr_caches();
 	if (err)
 		goto free_inodecache;
+	err = f2fs_create_node_manager_caches();
+	if (err)
+		goto fail_xattr_caches;
 	err = f2fs_create_segment_manager_caches();
 	if (err)
 		goto free_node_manager_caches;
@@ -3628,6 +3633,8 @@ free_segment_manager_caches:
 	f2fs_destroy_segment_manager_caches();
 free_node_manager_caches:
 	f2fs_destroy_node_manager_caches();
+fail_xattr_caches:
+	f2fs_destroy_xattr_caches();
 free_inodecache:
 	destroy_inodecache();
 fail:
@@ -3645,6 +3652,7 @@ static void __exit exit_f2fs_fs(void)
 	f2fs_destroy_checkpoint_caches();
 	f2fs_destroy_segment_manager_caches();
 	f2fs_destroy_node_manager_caches();
+	f2fs_destroy_xattr_caches();
 	destroy_inodecache();
 	f2fs_destroy_trace_ios();
 }

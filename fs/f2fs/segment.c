@@ -210,7 +210,7 @@ void f2fs_register_inmem_page(struct inode *inode, struct page *page)
 	inc_page_count(F2FS_I_SB(inode), F2FS_INMEM_PAGES);
 	mutex_unlock(&fi->inmem_lock);
 
-	trace_f2fs_register_inmem_page(page, INMEM);
+	//trace_f2fs_register_inmem_page(page, INMEM);
 }
 
 static int __revoke_inmem_pages(struct inode *inode,
@@ -224,8 +224,8 @@ static int __revoke_inmem_pages(struct inode *inode,
 	list_for_each_entry_safe(cur, tmp, head, list) {
 		struct page *page = cur->page;
 
-		if (drop)
-			trace_f2fs_commit_inmem_page(page, INMEM_DROP);
+		//if (drop)
+		//	trace_f2fs_commit_inmem_page(page, INMEM_DROP);
 
 		if (trylock) {
 			/*
@@ -244,7 +244,7 @@ static int __revoke_inmem_pages(struct inode *inode,
 			struct dnode_of_data dn;
 			struct node_info ni;
 
-			trace_f2fs_commit_inmem_page(page, INMEM_REVOKE);
+			//trace_f2fs_commit_inmem_page(page, INMEM_REVOKE);
 retry:
 			set_new_dnode(&dn, inode, NULL, NULL, 0);
 			err = f2fs_get_dnode_of_data(&dn, page->index,
@@ -371,7 +371,7 @@ void f2fs_drop_inmem_page(struct inode *inode, struct page *page)
 	f2fs_clear_page_private(page);
 	f2fs_put_page(page, 0);
 
-	trace_f2fs_commit_inmem_page(page, INMEM_INVALIDATE);
+	//trace_f2fs_commit_inmem_page(page, INMEM_INVALIDATE);
 }
 
 static int __f2fs_commit_inmem_pages(struct inode *inode)
@@ -398,7 +398,7 @@ static int __f2fs_commit_inmem_pages(struct inode *inode)
 
 		lock_page(page);
 		if (page->mapping == inode->i_mapping) {
-			trace_f2fs_commit_inmem_page(page, INMEM);
+			//trace_f2fs_commit_inmem_page(page, INMEM);
 
 			f2fs_wait_on_page_writeback(page, DATA, true, true);
 
@@ -574,8 +574,8 @@ static int __submit_flush_wait(struct f2fs_sb_info *sbi,
 	ret = submit_bio_wait(WRITE_FLUSH, bio);
 	bio_put(bio);
 
-	trace_f2fs_issue_flush(bdev, test_opt(sbi, NOBARRIER),
-				test_opt(sbi, FLUSH_MERGE), ret);
+	//trace_f2fs_issue_flush(bdev, test_opt(sbi, NOBARRIER),
+	//			test_opt(sbi, FLUSH_MERGE), ret);
 	return ret;
 }
 
@@ -1000,7 +1000,7 @@ static void __remove_discard_cmd(struct f2fs_sb_info *sbi,
 	struct discard_cmd_control *dcc = SM_I(sbi)->dcc_info;
 	unsigned long flags;
 
-	trace_f2fs_remove_discard(dc->bdev, dc->start, dc->len);
+	//trace_f2fs_remove_discard(dc->bdev, dc->start, dc->len);
 
 	spin_lock_irqsave(&dc->lock, flags);
 	if (dc->bio_ref) {
@@ -1169,10 +1169,10 @@ static void __init_discard_policy(struct f2fs_sb_info *sbi,
 		dpolicy->ordered = true;
 		if (utilization(sbi) > DEF_DISCARD_URGENT_UTIL) {
 			dpolicy->granularity = 1;
-			dpolicy->max_interval = DEF_MIN_DISCARD_ISSUE_TIME;
+			dpolicy->max_interval = DEF_MAX_DISCARD_URGENT_ISSUE_TIME;
 		}
 	} else if (discard_type == DPOLICY_FORCE) {
-		dpolicy->min_interval = DEF_MIN_DISCARD_ISSUE_TIME;
+		dpolicy->min_interval = 1;
 		dpolicy->mid_interval = DEF_MID_DISCARD_ISSUE_TIME;
 		dpolicy->max_interval = DEF_MAX_DISCARD_ISSUE_TIME;
 		dpolicy->io_aware = false;
@@ -1212,7 +1212,7 @@ static int __submit_discard_cmd(struct f2fs_sb_info *sbi,
 	if (is_sbi_flag_set(sbi, SBI_NEED_FSCK))
 		return 0;
 
-	trace_f2fs_issue_discard(bdev, dc->start, dc->len);
+	//trace_f2fs_issue_discard(bdev, dc->start, dc->len);
 
 	lstart = dc->lstart;
 	start = dc->start;
@@ -1464,7 +1464,7 @@ static int __queue_discard_cmd(struct f2fs_sb_info *sbi,
 	if (!f2fs_bdev_support_discard(bdev))
 		return 0;
 
-	trace_f2fs_queue_discard(bdev, blkstart, blklen);
+	//trace_f2fs_queue_discard(bdev, blkstart, blklen);
 
 	if (f2fs_is_multi_device(sbi)) {
 		int devi = f2fs_target_device_index(sbi, blkstart);
@@ -1782,7 +1782,8 @@ static int issue_discard_thread(void *data)
 		wait_event_interruptible_timeout(*q,
 				kthread_should_stop() || freezing(current) ||
 				dcc->discard_wake,
-				msecs_to_jiffies(wait_ms));
+				msecs_to_jiffies((sbi->gc_mode == GC_URGENT) ?
+						 1 : wait_ms));
 
 		if (dcc->discard_wake)
 			dcc->discard_wake = 0;
@@ -1855,7 +1856,7 @@ static int __f2fs_issue_discard_zone(struct f2fs_sb_info *sbi,
 				 blkstart, blklen);
 			return -EIO;
 		}
-		trace_f2fs_issue_reset_zone(bdev, blkstart);
+		//trace_f2fs_issue_reset_zone(bdev, blkstart);
 		return blkdev_reset_zones(bdev, sector, nr_sects, GFP_NOFS);
 	}
 
