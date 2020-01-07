@@ -4,9 +4,9 @@ if [ -f ~/WORKING_DIRECTORY/AGNi_stamp.sh ];
 	then
 	. ~/WORKING_DIRECTORY/AGNi_stamp.sh
 fi
-if [ -f ~/WORKING_DIRECTORY/gcc-8.x-uber_aarch64.sh ];
+if [ -f ~/WORKING_DIRECTORY/gcc-7.5.0_linaro_aarch64.sh ];
 	then
-	. ~/WORKING_DIRECTORY/gcc-8.x-uber_aarch64.sh
+	. ~/WORKING_DIRECTORY/gcc-7.5.0_linaro_aarch64.sh
 fi
 
 export ARCH=arm64
@@ -14,7 +14,7 @@ export SUBARCH=arm64
 mkdir -p /mnt/ANDROID/COMPILED_OUT
 
 echo ""
-echo " Cross-compiling AGNi purePIE kernel whyred..."
+echo " Cross-compiling AGNi Android 10 kernel whyred..."
 echo ""
 
 cd $KERNELDIR/
@@ -24,7 +24,7 @@ then
     make defconfig O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64 agni_whyred-A10_defconfig
 fi
 
-make -j8 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
+make -j12 O=/mnt/ANDROID/COMPILED_OUT ARCH=arm64
 
 rm -rf $KERNELDIR/BUILT_whyred-A10
 mkdir -p $KERNELDIR/BUILT_whyred-A10

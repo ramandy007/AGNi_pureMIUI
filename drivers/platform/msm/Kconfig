@@ -1,3 +1,11 @@
+config MACH_XIAOMI_AGNI_MIUI
+	bool "AGNi configuration for MIUI"
+	depends on ARCH_SDM630 || ARCH_SDM660
+
+config MACH_XIAOMI_AGNI_ANDROID_9
+	bool "AGNi configuration for Pie"
+	depends on ARCH_SDM630 || ARCH_SDM660
+
 menu "Qualcomm MSM specific device drivers"
 	depends on ARCH_QCOM
 
