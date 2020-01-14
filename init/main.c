@@ -129,7 +129,11 @@ static char *initcall_command_line;
 static char *execute_command;
 static char *ramdisk_execute_command;
 
-static unsigned int android_version = CONFIG_DEFAULT_ANDROID_VERSION;
+#ifdef CONFIG_MACH_XIAOMI_AGNI_ANDROID_9
+static unsigned int android_version = 9;
+#else
+static unsigned int android_version = 10;
+#endif
 
 static int __init set_android_version(char *val)
 {
