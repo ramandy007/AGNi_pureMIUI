@@ -26,6 +26,7 @@
 #include "fg-reg.h"
 #include <linux/charging_state.h>
 #include <linux/swap.h>
+#include <linux/adrenokgsl_state.h>
 
 #define FG_GEN3_DEV_NAME	"qcom,fg-gen3"
 
@@ -894,6 +895,9 @@ static int fg_get_msoc(struct fg_chip *chip, int *msoc)
 
 	if (*msoc >= FULL_CAPACITY)
 		*msoc = FULL_CAPACITY;
+
+	agni_memprobe();
+	adreno_load();
 
 	if (*msoc <= LOW_CAPACITY)
 		low_batt_swap_stall = true;
