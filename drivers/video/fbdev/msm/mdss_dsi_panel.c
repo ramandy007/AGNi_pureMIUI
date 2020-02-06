@@ -31,6 +31,7 @@
 #ifdef CONFIG_FB_MSM_MDSS_LIVEDISPLAY
 #include "mdss_livedisplay.h"
 #endif
+#include <linux/agni_meminfo.h>
 
 #ifdef CONFIG_POWERSUSPEND
 #include <linux/powersuspend.h>
@@ -1252,6 +1253,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	
 	display_on = false;
 //	sched_set_boost(0);
+	agni_memprobe();
 
 
 #ifdef CONFIG_POWERSUSPEND
