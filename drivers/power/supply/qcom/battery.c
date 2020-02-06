@@ -89,7 +89,7 @@ enum print_reason {
 	PR_PARALLEL	= BIT(0),
 };
 
-static int debug_mask;
+static int debug_mask = 0;
 module_param_named(debug_mask, debug_mask, int, S_IRUSR | S_IWUSR);
 
 #define pl_dbg(chip, reason, fmt, ...)		\
@@ -1425,7 +1425,7 @@ int qcom_batt_init(void)
 		goto release_wakeup_source;
 	}
 
-	chip->fv_votable = create_votable("FV", VOTE_MIN,
+	chip->fv_votable = create_votable("FV", VOTE_MAX,
 					pl_fv_vote_callback,
 					chip);
 	if (IS_ERR(chip->fv_votable)) {
