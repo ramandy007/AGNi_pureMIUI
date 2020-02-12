@@ -3315,7 +3315,7 @@ static int msm_compr_audio_effects_config_put(struct snd_kcontrol *kcontrol,
 	if (prtd->compr_passthr != LEGACY_PCM) {
 		pr_debug("%s: No effects for compr_type[%d]\n",
 			__func__, prtd->compr_passthr);
-		return 0;
+		goto done;
 	} else {
 		pr_debug("%s: Effects supported for compr_type[%d]\n",
 			 __func__, prtd->compr_passthr);
@@ -3368,7 +3368,7 @@ static int msm_compr_audio_effects_config_put(struct snd_kcontrol *kcontrol,
 		pr_debug("%s: DTS_EAGLE_MODULE\n", __func__);
 		if (!msm_audio_effects_is_effmodule_supp_in_top(effects_module,
 						prtd->audio_client->topology))
-			return 0;
+			goto done;
 		msm_dts_eagle_handle_asm(NULL, (void *)values, true,
 					 false, prtd->audio_client, NULL);
 		break;
@@ -3452,14 +3452,16 @@ static int msm_compr_audio_effects_config_get(struct snd_kcontrol *kcontrol,
 			pr_err("%s: DTS_EAGLE_MODULE parameter's requested size (%li) too large (max size is %i)\n",
 				__func__, values[2],
 				DTS_EAGLE_MAX_PARAM_SIZE_FOR_ALSA);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto done;
 		}
 		msm_dts_eagle_handle_asm(NULL, (void *)&values[1],
 					 true, true, prtd->audio_client, NULL);
 		break;
 	default:
 		pr_err("%s: Invalid effects config module\n", __func__);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 #endif
 done:
