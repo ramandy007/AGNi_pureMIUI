@@ -1,4 +1,5 @@
 /* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -747,8 +748,8 @@
 					<2 3 4 5 8>;
 
 				qcom,cpr-voltage-ceiling =
-					< 724000  724000  724000  788000  868000
-					 1068000 1068000 1068000>;
+					<724000  724000  724000  788000  868000
+					 1028000 1028000 1028000>;
 
 				qcom,cpr-voltage-floor =
 					<588000  588000  596000  652000  712000
@@ -899,7 +900,7 @@
 
 				qcom,cpr-voltage-ceiling =
 					<724000  724000  788000  868000
-					 988000  988000 1068000>;
+					 948000  948000 1028000>;
 
 				qcom,cpr-voltage-floor =
 					<588000  596000  652000  712000

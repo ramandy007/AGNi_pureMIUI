@@ -1,4 +1,5 @@
 /* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -2063,6 +2064,32 @@
 					pins = "gpio67";
 					drive-strength = <2>;
 					bias-disable;
+				};
+			};
+		};
+		f7a_touch_gpio {
+			f7a_touch_reset_gpio_default: f7a_touch_reset_gpio_default {
+				mux {
+					pins = "gpio66";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio66";
+					drive-strength = <16>;
+					bias-pull-up;
+				};
+			};
+			f7a_touch_interrupt_gpio_default: f7a_touch_interrupt_gpio_default {
+				mux {
+					pins = "gpio67";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio67";
+					drive-strength = <2>;
+					bias-pull-up;
 				};
 			};
 		};

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015-2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -370,6 +371,9 @@
 
 	hostless: qcom,msm-pcm-hostless {
 		compatible = "qcom,msm-pcm-hostless";
+		audio_test_mod {
+			compatible = "qcom,audio-test-mod";
+		};
 	};
 
 	dai_pri_auxpcm: qcom,msm-pri-auxpcm {
